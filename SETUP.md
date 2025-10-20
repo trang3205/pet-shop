@@ -226,7 +226,11 @@ mkdir -p routes middleware
 - Chỉ cần:
 
 1. Clone dự án về:
-   https://github.com/trang3205/pet-shop.git
+
+```bash
+https://github.com/trang3205/pet-shop.git
+```
+
 2. Khởi chạy lại dự án:
 
 ```bash
