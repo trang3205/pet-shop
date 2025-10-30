@@ -1,0 +1,201 @@
+<!-- views/vwProduct/detail.handlebars -->
+<div class="container mt-4">
+    <div class="row">
+        <!-- Product Images -->
+        <div class="col-md-6">
+            <div class="card">
+                <img src="{{product.main_image_url}}" class="card-img-top" alt="{{product.name}}" 
+                     style="height: 400px; object-fit: cover;">
+                
+                {{#if product.discount_price}}
+                <span class="badge bg-danger position-absolute top-0 start-0 m-3 fs-6">Giảm giá</span>
+                {{/if}}
+                {{#if product.is_featured}}
+                <span class="badge bg-warning position-absolute top-0 end-0 m-3 fs-6">Nổi bật</span>
+                {{/if}}
+            </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="h3 fw-bold">{{product.name}}</h1>
+                    <p class="text-muted">{{product.category_name}}</p>
+                    
+                    <div class="mb-3">
+                        {{#if product.discount_price}}
+                        <div class="d-flex align-items-center">
+                            <h2 class="text-danger me-3">{{formatCurrency product.discount_price}}</h2>
+                            <h4 class="text-muted text-decoration-line-through">{{formatCurrency product.price}}</h4>
+                        </div>
+                        {{else}}
+                        <h2 class="text-primary">{{formatCurrency product.price}}</h2>
+                        {{/if}}
+                    </div>
+
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rating me-3">
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <span class="fw-bold">{{product.average_rating}}</span>
+                            <span class="text-muted">({{product.review_count}} đánh giá)</span>
+                        </div>
+                        <div class="stock">
+                            <span class="badge bg-success">{{product.stock_quantity}} trong kho</span>
+                        </div>
+                    </div>
+
+                    <p class="card-text">{{product.short_description}}</p>
+
+                    <div class="mb-4">
+                        <h5>Mô tả sản phẩm</h5>
+                        <p class="text-muted">{{product.description}}</p>
+                    </div>
+
+                    <!-- Add to Cart -->
+                    <div class="d-flex gap-2 mb-3">
+                        <div class="input-group" style="width: 120px;">
+                            <button class="btn btn-outline-secondary" type="button">-</button>
+                            <input type="number" class="form-control text-center" value="1" min="1" max="{{product.stock_quantity}}">
+                            <button class="btn btn-outline-secondary" type="button">+</button>
+                        </div>
+                        <button class="btn btn-primary flex-grow-1" onclick="addToCart({{product.id}}, 1)">
+                            <i class="bi bi-cart-plus"></i> Thêm vào giỏ hàng
+                        </button>
+                    </div>
+
+                    <!-- Features -->
+                    <div class="row text-center g-3">
+                        <div class="col-4">
+                            <i class="bi bi-truck text-primary"></i>
+                            <small class="d-block">Giao hàng miễn phí</small>
+                        </div>
+                        <div class="col-4">
+                            <i class="bi bi-arrow-left-right text-primary"></i>
+                            <small class="d-block">Đổi trả 7 ngày</small>
+                        </div>
+                        <div class="col-4">
+                            <i class="bi bi-shield-check text-primary"></i>
+                            <small class="d-block">Chính hãng</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Details Tabs -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="productTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="description-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#description" type="button" role="tab">
+                                Mô tả chi tiết
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ingredients-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#ingredients" type="button" role="tab">
+                                Thành phần
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="usage-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#usage" type="button" role="tab">
+                                Hướng dẫn sử dụng
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content p-3" id="productTabsContent">
+                        <div class="tab-pane fade show active" id="description" role="tabpanel">
+                            <p>{{product.description}}</p>
+                        </div>
+                        <div class="tab-pane fade" id="ingredients" role="tabpanel">
+                            <p>{{product.ingredients}}</p>
+                        </div>
+                        <div class="tab-pane fade" id="usage" role="tabpanel">
+                            <p>{{product.usage_instructions}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    {{#if relatedProducts.length}}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="mb-4">Sản phẩm liên quan</h3>
+            <div class="row g-3">
+                {{#each relatedProducts}}
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <div class="card h-100">
+                        <img src="{{this.main_image_url}}" class="card-img-top" alt="{{this.name}}" 
+                             style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h6 class="card-title">{{this.name}}</h6>
+                            <p class="card-text text-primary fw-bold">{{formatCurrency this.price}}</p>
+                            <a href="/products/{{this.id}}" class="btn btn-outline-primary btn-sm w-100">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+    {{/if}}
+</div>
+
+<script>
+// Function để thêm sản phẩm vào giỏ hàng
+async function addToCart(productId, quantity) {
+    try {
+        const response = await fetch('/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                quantity: quantity
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showAlert('Đã thêm sản phẩm vào giỏ hàng!', 'success');
+            updateCartCount(result.cartItemsCount);
+        } else {
+            showAlert(result.message || 'Có lỗi xảy ra!', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+        showAlert('Có lỗi xảy ra khi thêm vào giỏ hàng!', 'error');
+    }
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 3000);
+}
+
+function updateCartCount(count) {
+    const cartBadge = document.querySelector('.cart-badge');
+    if (cartBadge) cartBadge.textContent = count;
+}
+</script>
