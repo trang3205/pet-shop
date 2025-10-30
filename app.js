@@ -10,10 +10,12 @@ import { fileURLToPath } from 'url';
 import homeRouter from './routes/home.route.js';
 import productRouter from './routes/product.route.js';
 import accountRoute from './routes/account.route.js';
+import categoryRouter from './routes/category.route.js';
 // Middlewares
-import { 
-  authenticateUser, 
-  getCartCount 
+import {
+  authenticateUser,
+  getCartCount,
+  getCategories
 } from './middlewares/auth.js';
 
 // QUAN TRỌNG: Import db.js để khởi tạo kết nối database
@@ -71,6 +73,20 @@ app.engine(
           arr.push(i);
         }
         return arr;
+      },
+      // Helper để thêm divider sau mỗi 2 category (tuỳ chỉnh được)
+      ifDivider: function (index, categories, options) {
+        // Thêm divider sau category thứ 2 và thứ 4
+        // Có thể điều chỉnh theo số lượng categories bạn muốn
+        const dividerPositions = [1, 3]; // Sau item thứ 2 và thứ 4 (0-based index)
+        return dividerPositions.includes(index) ? options.fn(this) : options.inverse(this);
+      },
+      // Helper cho pagination
+      subtract: function (a, b) {
+        return a - b;
+      },
+      add: function (a, b) {
+        return a + b;
       }
     },
   })
@@ -93,7 +109,7 @@ app.use(
 // ======================
 app.use(authenticateUser);
 app.use(getCartCount);
-
+app.use(getCategories);
 // ======================
 // DEBUG MIDDLEWARE - XÓA SAU KHI FIX
 // ======================
@@ -106,6 +122,7 @@ app.use((req, res, next) => {
 // ROUTES SETUP
 // ======================
 app.use('/', homeRouter);
+app.use('/categories', categoryRouter);
 app.use('/products', productRouter);
 app.use('/account', accountRoute);
 
@@ -113,8 +130,8 @@ app.use('/account', accountRoute);
 // 404 ERROR HANDLER
 // ======================
 app.use((req, res) => {
-  res.status(404).render('404', { 
-    title: 'Không tìm thấy trang' 
+  res.status(404).render('404', {
+    title: 'Không tìm thấy trang'
   });
 });
 

@@ -1,0 +1,74 @@
+Folder PATH listing for volume New Volume
+Volume serial number is 28C8-B82F
+D:.
+�   .env
+�   .gitignore
+�   app.js
+�   package-lock.json
+�   package.json
+�   project_structure
+�   README.md
+�   SETUP.md
+�   test-db.js
+�   
++---middlewares
+�       auth.js
+�       
++---models
+�       cart.model.js
+�       category.model.js
+�       order.model.js
+�       product.model.js
+�       review.model.js
+�       user.model.js
+�       
++---node_modules
+
+�           
++---routes
+�       account.route.js
+�       cart.route.js
+�       category.route.js
+�       home.route.js
+�       order.route.js
+�       product.route.js
+�       review.route.js
+�       user.route.js
+�       
++---static
+�   +---imgs
+�       +---banners
+�       �       slide-1.png
+�       �       slide-2.png
+�       �       slide-3.png
+�       �       
+�       +---categories
+�       �       accessor.jpg
+�       �       cat-food.jpg
+�       �       dog-food.jpg
+�       �       toys.jpg
+�       �       
+�       +---products
++---utils
+�       db.js
+�       email.service.js
+�       otp.service.js
+�       
++---views
+    �   404.handlebars
+    �   home.handlebars
+    �   
+    +---layouts
+    �       main.handlebars
+    �       
+    +---vwAccount
+    �       forgot-password.handlebars
+    �       login.handlebars
+    �       profile.handlebars
+    �       register.handlebars
+    �       reset-password.handlebars
+    �       verify-otp.handlebars
+    �       
+    +---vwProduct
+            index.handlebars
+            

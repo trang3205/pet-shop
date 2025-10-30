@@ -97,3 +97,17 @@ export function requireAdminOrStaff(req, res, next) {
   }
   next();
 }
+
+export async function getCategories(req, res, next) {
+  try {
+    const CategoryModel = await import('../models/category.model.js');
+    const categories = await CategoryModel.default.findAllActive();
+    
+    res.locals.categories = categories;
+    console.log('📂 CATEGORIES LOADED:', categories.length, 'categories');
+  } catch (error) {
+    console.error('Error getting categories:', error);
+    res.locals.categories = [];
+  }
+  next();
+}
