@@ -87,7 +87,33 @@ app.engine(
       },
       add: function (a, b) {
         return a + b;
-      }
+      },
+      // Helper cho reviews - FIXED VERSION
+      ifGreater: function (a, b, options) {
+        if (b === undefined || b === null) return options.inverse(this);
+        return a > b ? options.fn(this) : options.inverse(this);
+      },
+
+      getRatingStats: function (rating, stats) {
+        // Kiểm tra nếu stats không tồn tại hoặc không có reviews
+        if (!stats || !stats.total_reviews || stats.total_reviews === 0) {
+          return { count: 0, percentage: 0 };
+        }
+
+        const ratingsMap = {
+          5: { count: stats.rating_5 || 0, percentage: ((stats.rating_5 || 0) / stats.total_reviews) * 100 },
+          4: { count: stats.rating_4 || 0, percentage: ((stats.rating_4 || 0) / stats.total_reviews) * 100 },
+          3: { count: stats.rating_3 || 0, percentage: ((stats.rating_3 || 0) / stats.total_reviews) * 100 },
+          2: { count: stats.rating_2 || 0, percentage: ((stats.rating_2 || 0) / stats.total_reviews) * 100 },
+          1: { count: stats.rating_1 || 0, percentage: ((stats.rating_1 || 0) / stats.total_reviews) * 100 }
+        };
+
+        return ratingsMap[6 - rating] || { count: 0, percentage: 0 };
+      },
+      // Helper để set giá trị mặc định
+      default: function (value, defaultValue) {
+        return value !== undefined && value !== null ? value : defaultValue;
+      },
     },
   })
 );

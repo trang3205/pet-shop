@@ -4,9 +4,9 @@
         <!-- Product Images -->
         <div class="col-md-6">
             <div class="card">
-                <img src="{{product.main_image_url}}" class="card-img-top" alt="{{product.name}}" 
-                     style="height: 400px; object-fit: cover;">
-                
+                <img src="{{product.main_image_url}}" class="card-img-top" alt="{{product.name}}"
+                    style="height: 400px; object-fit: cover;">
+
                 {{#if product.discount_price}}
                 <span class="badge bg-danger position-absolute top-0 start-0 m-3 fs-6">Giảm giá</span>
                 {{/if}}
@@ -22,7 +22,7 @@
                 <div class="card-body">
                     <h1 class="h3 fw-bold">{{product.name}}</h1>
                     <p class="text-muted">{{product.category_name}}</p>
-                    
+
                     <div class="mb-3">
                         {{#if product.discount_price}}
                         <div class="d-flex align-items-center">
@@ -56,7 +56,8 @@
                     <div class="d-flex gap-2 mb-3">
                         <div class="input-group" style="width: 120px;">
                             <button class="btn btn-outline-secondary" type="button">-</button>
-                            <input type="number" class="form-control text-center" value="1" min="1" max="{{product.stock_quantity}}">
+                            <input type="number" class="form-control text-center" value="1" min="1"
+                                max="{{product.stock_quantity}}">
                             <button class="btn btn-outline-secondary" type="button">+</button>
                         </div>
                         <button class="btn btn-primary flex-grow-1" onclick="addToCart({{product.id}}, 1)">
@@ -91,25 +92,32 @@
                 <div class="card-body">
                     <ul class="nav nav-tabs" id="productTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="description-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#description" type="button" role="tab">
+                            <button class="nav-link active" id="description-tab" data-bs-toggle="tab"
+                                data-bs-target="#description" type="button" role="tab">
                                 Mô tả chi tiết
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="ingredients-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#ingredients" type="button" role="tab">
+                            <button class="nav-link" id="ingredients-tab" data-bs-toggle="tab"
+                                data-bs-target="#ingredients" type="button" role="tab">
                                 Thành phần
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="usage-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#usage" type="button" role="tab">
+                            <button class="nav-link" id="usage-tab" data-bs-toggle="tab" data-bs-target="#usage"
+                                type="button" role="tab">
                                 Hướng dẫn sử dụng
                             </button>
                         </li>
+                        <!-- 🆕 TAB REVIEWS -->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews"
+                                type="button" role="tab">
+                                Đánh giá ({{ratingStats.total_reviews}})
+                            </button>
+                        </li>
                     </ul>
-                    
+
                     <div class="tab-content p-3" id="productTabsContent">
                         <div class="tab-pane fade show active" id="description" role="tabpanel">
                             <p>{{product.description}}</p>
@@ -119,6 +127,103 @@
                         </div>
                         <div class="tab-pane fade" id="usage" role="tabpanel">
                             <p>{{product.usage_instructions}}</p>
+                        </div>
+
+                        <!-- 🆕 TAB REVIEWS CONTENT -->
+                        <!-- 🆕 TAB REVIEWS CONTENT -->
+                        <!-- 🆕 TAB REVIEWS CONTENT -->
+                        <div class="tab-pane fade" id="reviews" role="tabpanel">
+                            <div class="row">
+                                <!-- Rating Summary -->
+                                <div class="col-md-4">
+                                    <div class="text-center mb-4">
+                                        <h2 class="text-warning">{{default ratingStats.avg_rating 0}}</h2>
+                                        <div class="mb-2">
+                                            {{#each (arrayRange 5)}}
+                                            {{#ifGreater this (default ratingStats.avg_rating 0)}}
+                                            <i class="bi bi-star text-warning"></i>
+                                            {{else}}
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                            {{/ifGreater}}
+                                            {{/each}}
+                                        </div>
+                                        <p class="text-muted">Dựa trên {{default ratingStats.total_reviews 0}} đánh giá
+                                        </p>
+                                    </div>
+
+                                    <!-- Rating Breakdown - FIXED -->
+                                    <div class="rating-bars">
+                                        {{#if ratingStats}}
+                                        {{#each (arrayRange 5)}}
+                                        {{#with (getRatingStats @index ratingStats) as |stats|}}
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2">{{subtract 6 this}} sao</span>
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-warning"
+                                                    style="width: {{stats.percentage}}%"></div>
+                                            </div>
+                                            <small class="text-muted">({{stats.count}})</small>
+                                        </div>
+                                        {{/with}}
+                                        {{/each}}
+                                        {{else}}
+                                        <p class="text-muted text-center">Chưa có đánh giá</p>
+                                        {{/if}}
+                                    </div>
+                                </div>
+
+                                <!-- Reviews List -->
+                                <div class="col-md-8">
+                                    {{#if reviews.length}}
+                                    {{#each reviews}}
+                                    <div class="review-item border-bottom pb-3 mb-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <img src="{{this.avatar_url}}" class="rounded-circle me-2"
+                                                    alt="{{this.user_name}}" width="32" height="32"
+                                                    onerror="this.src='/static/imgs/users/default-avatar.jpg'">
+                                                <div>
+                                                    <strong>{{this.user_name}}</strong>
+                                                    {{#if this.is_verified_purchase}}
+                                                    <span class="badge bg-success ms-2">Đã mua hàng</span>
+                                                    {{/if}}
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">{{formatDate this.created_at}}</small>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            {{#each (arrayRange 5)}}
+                                            {{#ifGreater this ../this.rating}}
+                                            <i class="bi bi-star text-warning"></i>
+                                            {{else}}
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                            {{/ifGreater}}
+                                            {{/each}}
+                                        </div>
+
+                                        {{#if this.title}}
+                                        <h6 class="fw-bold">{{this.title}}</h6>
+                                        {{/if}}
+
+                                        <p class="mb-2">{{this.comment}}</p>
+
+                                        {{#if this.helpful_count}}
+                                        <div class="text-muted">
+                                            <small>{{this.helpful_count}} người thấy hữu ích</small>
+                                        </div>
+                                        {{/if}}
+                                    </div>
+                                    {{/each}}
+                                    {{else}}
+                                    <div class="text-center py-4">
+                                        <i class="bi bi-chat-quote display-1 text-muted"></i>
+                                        <p class="text-muted mt-3">Chưa có đánh giá nào</p>
+                                        <p class="text-muted">Hãy là người đầu tiên đánh giá sản phẩm này</p>
+                                    </div>
+                                    {{/if}}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -135,8 +240,8 @@
                 {{#each relatedProducts}}
                 <div class="col-xl-3 col-lg-4 col-md-6">
                     <div class="card h-100">
-                        <img src="{{this.main_image_url}}" class="card-img-top" alt="{{this.name}}" 
-                             style="height: 200px; object-fit: cover;">
+                        <img src="{{this.main_image_url}}" class="card-img-top" alt="{{this.name}}"
+                            style="height: 200px; object-fit: cover;">
                         <div class="card-body">
                             <h6 class="card-title">{{this.name}}</h6>
                             <p class="card-text text-primary fw-bold">{{formatCurrency this.price}}</p>
@@ -154,48 +259,48 @@
 </div>
 
 <script>
-// Function để thêm sản phẩm vào giỏ hàng
-async function addToCart(productId, quantity) {
-    try {
-        const response = await fetch('/cart/add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                product_id: productId,
-                quantity: quantity
-            })
-        });
+    // Function để thêm sản phẩm vào giỏ hàng
+    async function addToCart(productId, quantity) {
+        try {
+            const response = await fetch('/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    quantity: quantity
+                })
+            });
 
-        const result = await response.json();
+            const result = await response.json();
 
-        if (result.success) {
-            showAlert('Đã thêm sản phẩm vào giỏ hàng!', 'success');
-            updateCartCount(result.cartItemsCount);
-        } else {
-            showAlert(result.message || 'Có lỗi xảy ra!', 'error');
+            if (result.success) {
+                showAlert('Đã thêm sản phẩm vào giỏ hàng!', 'success');
+                updateCartCount(result.cartItemsCount);
+            } else {
+                showAlert(result.message || 'Có lỗi xảy ra!', 'error');
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            showAlert('Có lỗi xảy ra khi thêm vào giỏ hàng!', 'error');
         }
-    } catch (error) {
-        console.error('Error adding to cart:', error);
-        showAlert('Có lỗi xảy ra khi thêm vào giỏ hàng!', 'error');
     }
-}
 
-function showAlert(message, type) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    document.body.appendChild(alertDiv);
-    setTimeout(() => alertDiv.remove(), 3000);
-}
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
 
-function updateCartCount(count) {
-    const cartBadge = document.querySelector('.cart-badge');
-    if (cartBadge) cartBadge.textContent = count;
-}
+    function updateCartCount(count) {
+        const cartBadge = document.querySelector('.cart-badge');
+        if (cartBadge) cartBadge.textContent = count;
+    }
 </script>

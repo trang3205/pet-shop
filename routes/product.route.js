@@ -2,6 +2,7 @@
 import express from "express";
 import ProductModel from "../models/product.model.js";
 import CategoryModel from "../models/category.model.js";
+import ReviewModel from "../models/review.model.js";
 import db from "../utils/db.js";
 
 const router = express.Router();
@@ -33,7 +34,12 @@ router.get("/:id", async (req, res) => {
       product.category_id, 
       4
     );
-    
+    // 🆕 LẤY REVIEWS & RATING STATS
+    const [reviews, ratingStats] = await Promise.all([
+      ReviewModel.findByProductId(product.id),
+      ReviewModel.getRatingStats(product.id)
+    ]);
+
     res.render("vwProduct/detail", {
       title: `${product.name} - PetShop`,
       product,
