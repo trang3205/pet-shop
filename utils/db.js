@@ -1,16 +1,21 @@
+// utils/db.js
 import knex from "knex";
+
+console.log('🔧 Testing database connection...');
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? '✅ Loaded' : '❌ Missing');
 
 const db = knex({
   client: "pg",
-  connection: {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    //ssl: { rejectUnauthorized: false }, // Sử dụng SSL nếu cần (khi deploy lên đám mây)
-  },
+  connection: process.env.DATABASE_URL + '?sslmode=no-verify',
   pool: { min: 0, max: 15 },
 });
+
+// Test connection
+db.raw('SELECT 1')
+  .then(() => console.log('✅ Database connected successfully!'))
+  .catch(err => {
+    console.error('❌ Database connection error:', err.message);
+    console.log('Connection string used:', process.env.DATABASE_URL);
+  });
 
 export default db;
