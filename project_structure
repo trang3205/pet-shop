@@ -32,8 +32,10 @@ D:.
 �       home.route.js
 �       order.route.js
 �       product.route.js
+�       profile.route.js
 �       review.route.js
 �       user.route.js
+�       wishlist.route.js
 �       
 +---static
 �   +---imgs
@@ -49,6 +51,13 @@ D:.
 �       �       toys.jpg
 �       �       
 �       +---products
+�               leather-collar.webp
+�               pedigree-adult.webp
+�               royal-canin-mini.webp
+�               royal-canin-persian.webp
+�               rubber-ball.webp
+�               whiskas-ocean.jpeg
+�               
 +---utils
 �       db.js
 �       email.service.js
@@ -70,5 +79,9 @@ D:.
     �       verify-otp.handlebars
     �       
     +---vwProduct
-            index.handlebars
+    �       detail.handlebars
+    �       index.handlebars
+    �       
+    +---vwUser
+            wishlist.handlebars
             

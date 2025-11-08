@@ -1,0 +1,240 @@
+<!-- views/vwUser/wishlist.handlebars -->
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-heart-fill text-danger"></i> 
+                        Sản phẩm yêu thích
+                    </h1>
+                    <p class="text-muted mb-0">
+                        {{#if wishlistItems.length}}
+                            Bạn có {{wishlistItems.length}} sản phẩm trong danh sách yêu thích
+                        {{else}}
+                            Chưa có sản phẩm nào trong danh sách yêu thích
+                        {{/if}}
+                    </p>
+                </div>
+                <div>
+                    <a href="/categories" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left"></i> Tiếp tục mua sắm
+                    </a>
+                </div>
+            </div>
+
+            <!-- Wishlist Items -->
+            {{#if wishlistItems.length}}
+            <div class="row g-4">
+                {{#each wishlistItems}}
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <div class="card h-100 product-card position-relative">
+                        <!-- Wishlist Remove Button -->
+                        <button class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2" 
+                                onclick="removeFromWishlist({{this.wishlist_id}})"
+                                style="z-index: 10; width: 32px; height: 32px; padding: 0;">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+
+                        {{#if this.discount_price}}
+                        <span class="badge bg-danger position-absolute top-0 start-0 m-2">Giảm giá</span>
+                        {{/if}}
+                        {{#if this.is_featured}}
+                        <span class="badge bg-warning position-absolute top-0 start-0 m-2" 
+                              style="transform: translateY(30px);">Nổi bật</span>
+                        {{/if}}
+
+                        <!-- Product Image -->
+                        <img src="{{this.main_image_url}}" class="card-img-top" alt="{{this.name}}"
+                            style="height: 200px; object-fit: cover; cursor: pointer;"
+                            onclick="window.location.href='/products/{{this.id}}'">
+
+                        <div class="card-body d-flex flex-column">
+                            <!-- Product Info -->
+                            <h6 class="card-title" style="cursor: pointer;"
+                                onclick="window.location.href='/products/{{this.id}}'">
+                                {{this.name}}
+                            </h6>
+                            <small class="text-muted mb-2">{{this.category_name}}</small>
+                            <p class="card-text text-muted small flex-grow-1">{{this.short_description}}</p>
+
+                            <!-- Price -->
+                            <div class="mb-2">
+                                {{#if this.discount_price}}
+                                <div class="d-flex align-items-center">
+                                    <strong class="text-danger me-2">{{formatCurrency this.discount_price}}</strong>
+                                    <small class="text-muted text-decoration-line-through">
+                                        {{formatCurrency this.price}}
+                                    </small>
+                                </div>
+                                {{else}}
+                                <strong class="text-primary">{{formatCurrency this.price}}</strong>
+                                {{/if}}
+                            </div>
+
+                            <!-- Rating & Stock -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    {{this.average_rating}} ({{this.review_count}})
+                                </small>
+                                <small class="text-muted">
+                                    {{this.stock_quantity}} trong kho
+                                </small>
+                            </div>
+
+                            <!-- Added Date -->
+                            <small class="text-muted mb-2">
+                                <i class="bi bi-clock"></i> 
+                                Thêm vào {{formatDate this.added_date}}
+                            </small>
+
+                            <!-- Action Buttons -->
+                            <div class="mt-auto">
+                                <button class="btn btn-outline-primary btn-sm w-100 mb-2"
+                                    onclick="addToCart({{this.id}}, 1)">
+                                    <i class="bi bi-cart-plus"></i> Thêm giỏ hàng
+                                </button>
+                                <a href="/products/{{this.id}}" class="btn btn-primary btn-sm w-100">
+                                    <i class="bi bi-eye"></i> Xem chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+
+            <!-- Empty State -->
+            {{else}}
+            <div class="text-center py-5">
+                <i class="bi bi-heart display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">Danh sách yêu thích trống</h4>
+                <p class="text-muted">Hãy thêm sản phẩm bạn yêu thích vào danh sách này!</p>
+                <div class="mt-4">
+                    <a href="/categories" class="btn btn-primary me-2">
+                        <i class="bi bi-bag"></i> Mua sắm ngay
+                    </a>
+                    <a href="/" class="btn btn-outline-primary">
+                        <i class="bi bi-house"></i> Về trang chủ
+                    </a>
+                </div>
+            </div>
+            {{/if}}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function để xóa sản phẩm khỏi wishlist
+    async function removeFromWishlist(wishlistId) {
+        if (!confirm('Bạn có chắc muốn xóa sản phẩm này khỏi danh sách yêu thích?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/user/wishlist/remove/${wishlistId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert(result.message, 'success');
+                // Remove item from DOM
+                const itemElement = document.querySelector(`[onclick="removeFromWishlist(${wishlistId})"]`).closest('.col-xl-3');
+                itemElement.remove();
+                
+                // Update empty state if needed
+                updateWishlistEmptyState();
+            } else {
+                showAlert(result.message || 'Có lỗi xảy ra!', 'error');
+            }
+        } catch (error) {
+            console.error('Error removing from wishlist:', error);
+            showAlert('Có lỗi xảy ra khi xóa sản phẩm!', 'error');
+        }
+    }
+
+    // Function để thêm sản phẩm vào giỏ hàng
+    async function addToCart(productId, quantity) {
+        try {
+            const response = await fetch('/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    quantity: quantity
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('Đã thêm sản phẩm vào giỏ hàng!', 'success');
+                updateCartCount(result.cartItemsCount);
+            } else {
+                showAlert(result.message || 'Có lỗi xảy ra!', 'error');
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            showAlert('Có lỗi xảy ra khi thêm vào giỏ hàng!', 'error');
+        }
+    }
+
+    // Update empty state
+    function updateWishlistEmptyState() {
+        const remainingItems = document.querySelectorAll('.col-xl-3').length;
+        if (remainingItems === 0) {
+            // Reload page to show empty state
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+    }
+
+    // Utility functions
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
+
+    function updateCartCount(count) {
+        const cartBadge = document.querySelector('.cart-badge');
+        if (cartBadge) {
+            cartBadge.textContent = count;
+        }
+    }
+</script>
+
+<style>
+.product-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.btn-danger {
+    transition: all 0.2s;
+}
+
+.btn-danger:hover {
+    transform: scale(1.1);
+}
+</style>

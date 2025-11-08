@@ -1,31 +1,32 @@
 <!-- views/home.handlebars -->
-
 <!-- Hero Banner/Slider -->
 <section class="mb-5">
   <div id="homeCarousel" class="carousel slide" data-bs-ride="carousel">
     <div class="carousel-inner">
       {{#if banners.length}}
-        {{#each banners}}
-        <div class="carousel-item {{#if @first}}active{{/if}}">
-          <img src="{{this.image_url}}" class="d-block w-100" alt="{{this.title}}" style="height: 500px; object-fit: cover;">
-          <div class="carousel-caption d-none d-md-block">
-            <h2>{{this.title}}</h2>
-            <p>{{this.subtitle}}</p>
-            {{#if this.target_url}}
-            <a href="{{this.target_url}}" class="btn btn-primary btn-lg">Mua ngay</a>
-            {{/if}}
-          </div>
+      {{#each banners}}
+      <div class="carousel-item {{#if @first}}active{{/if}}">
+        <img src="{{this.image_url}}" class="d-block w-100" alt="{{this.title}}"
+          style="height: 500px; object-fit: cover;">
+        <div class="carousel-caption d-none d-md-block">
+          <h2>{{this.title}}</h2>
+          <p>{{this.subtitle}}</p>
+          {{#if this.target_url}}
+          <a href="{{this.target_url}}" class="btn btn-primary btn-lg">Mua ngay</a>
+          {{/if}}
         </div>
-        {{/each}}
+      </div>
+      {{/each}}
       {{else}}
-        <div class="carousel-item active">
-          <img src="/static/imgs/banners/slide-1.png" class="d-block w-100" alt="PetShop" style="height: 500px; object-fit: cover;">
-          <div class="carousel-caption d-none d-md-block">
-            <h2>Chào mừng đến với PetShop</h2>
-            <p>Nơi cung cấp các sản phẩm chất lượng cho thú cưng của bạn</p>
-            <a href="/categories" class="btn btn-primary btn-lg">Mua sắm ngay</a>
-          </div>
+      <div class="carousel-item active">
+        <img src="/static/imgs/banners/slide-1.png" class="d-block w-100" alt="PetShop"
+          style="height: 500px; object-fit: cover;">
+        <div class="carousel-caption d-none d-md-block">
+          <h2>Chào mừng đến với PetShop</h2>
+          <p>Nơi cung cấp các sản phẩm chất lượng cho thú cưng của bạn</p>
+          <a href="/categories" class="btn btn-primary btn-lg">Mua sắm ngay</a>
         </div>
+      </div>
       {{/if}}
     </div>
     <button class="carousel-control-prev" type="button" data-bs-target="#homeCarousel" data-bs-slide="prev">
@@ -48,7 +49,7 @@
         <p class="text-center text-muted">Những sản phẩm được yêu thích nhất</p>
       </div>
     </div>
-    
+
     <div class="row g-4">
       {{#each featuredProducts}}
       <div class="col-lg-3 col-md-4 col-sm-6">
@@ -56,13 +57,14 @@
           {{#if this.discount_price}}
           <span class="badge bg-danger position-absolute top-0 start-0 m-2">Giảm giá</span>
           {{/if}}
-          
-          <img src="{{this.main_image_url}}" class="card-img-top" alt="{{this.name}}" style="height: 200px; object-fit: cover;">
-          
+
+          <img src="{{this.main_image_url}}" class="card-img-top" alt="{{this.name}}"
+            style="height: 200px; object-fit: cover;">
+
           <div class="card-body d-flex flex-column">
             <h6 class="card-title">{{this.name}}</h6>
             <p class="card-text text-muted small flex-grow-1">{{this.short_description}}</p>
-            
+
             <div class="mb-2">
               {{#if this.discount_price}}
               <div class="d-flex align-items-center">
@@ -73,7 +75,7 @@
               <strong class="text-primary">{{formatCurrency this.price}}</strong>
               {{/if}}
             </div>
-            
+
             <div class="d-flex justify-content-between align-items-center mb-2">
               <small class="text-muted">
                 <i class="bi bi-star-fill text-warning"></i>
@@ -83,12 +85,13 @@
                 {{this.stock_quantity}} trong kho
               </small>
             </div>
-            
+
             <div class="mt-auto">
-              <button class="btn btn-outline-primary btn-sm w-100 mb-2" 
-                      onclick="addToCart({{this.id}}, 1)">
+              {{#ifEqual ../user.role 'customer'}}
+              <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="addToCart({{this.id}}, 1)">
                 <i class="bi bi-cart-plus"></i> Thêm giỏ hàng
               </button>
+              {{/ifEqual}}
               <a href="/products/{{this.id}}" class="btn btn-primary btn-sm w-100">
                 <i class="bi bi-eye"></i> Xem chi tiết
               </a>
@@ -117,19 +120,20 @@
         <p class="text-center text-muted">Cập nhật những sản phẩm mới nhất</p>
       </div>
     </div>
-    
+
     <div class="row g-4">
       {{#each newProducts}}
       <div class="col-lg-3 col-md-4 col-sm-6">
         <div class="card h-100 product-card">
           <span class="badge bg-success position-absolute top-0 start-0 m-2">Mới</span>
-          
-          <img src="{{this.main_image_url}}" class="card-img-top" alt="{{this.name}}" style="height: 200px; object-fit: cover;">
-          
+
+          <img src="{{this.main_image_url}}" class="card-img-top" alt="{{this.name}}"
+            style="height: 200px; object-fit: cover;">
+
           <div class="card-body d-flex flex-column">
             <h6 class="card-title">{{this.name}}</h6>
             <p class="card-text text-muted small flex-grow-1">{{this.short_description}}</p>
-            
+
             <div class="mb-2">
               {{#if this.discount_price}}
               <div class="d-flex align-items-center">
@@ -140,12 +144,13 @@
               <strong class="text-primary">{{formatCurrency this.price}}</strong>
               {{/if}}
             </div>
-            
+
             <div class="mt-auto">
-              <button class="btn btn-outline-primary btn-sm w-100 mb-2" 
-                      onclick="addToCart({{this.id}}, 1)">
+              {{#ifEqual ../user.role 'customer'}}
+              <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="addToCart({{this.id}}, 1)">
                 <i class="bi bi-cart-plus"></i> Thêm giỏ hàng
               </button>
+              {{/ifEqual}}
               <a href="/products/{{this.id}}" class="btn btn-primary btn-sm w-100">
                 <i class="bi bi-eye"></i> Xem chi tiết
               </a>
@@ -174,19 +179,20 @@
         <p class="text-center text-muted">Được khách hàng đánh giá cao</p>
       </div>
     </div>
-    
+
     <div class="row g-4">
       {{#each bestSellingProducts}}
       <div class="col-lg-3 col-md-4 col-sm-6">
         <div class="card h-100 product-card">
           <span class="badge bg-warning position-absolute top-0 start-0 m-2">Bán chạy</span>
-          
-          <img src="{{this.main_image_url}}" class="card-img-top" alt="{{this.name}}" style="height: 200px; object-fit: cover;">
-          
+
+          <img src="{{this.main_image_url}}" class="card-img-top" alt="{{this.name}}"
+            style="height: 200px; object-fit: cover;">
+
           <div class="card-body d-flex flex-column">
             <h6 class="card-title">{{this.name}}</h6>
             <p class="card-text text-muted small flex-grow-1">{{this.short_description}}</p>
-            
+
             <div class="mb-2">
               {{#if this.discount_price}}
               <div class="d-flex align-items-center">
@@ -197,19 +203,20 @@
               <strong class="text-primary">{{formatCurrency this.price}}</strong>
               {{/if}}
             </div>
-            
+
             <div class="d-flex justify-content-between align-items-center mb-2">
               <small class="text-muted">
                 <i class="bi bi-star-fill text-warning"></i>
                 {{this.average_rating}} ({{this.review_count}})
               </small>
             </div>
-            
+
             <div class="mt-auto">
-              <button class="btn btn-outline-primary btn-sm w-100 mb-2" 
-                      onclick="addToCart({{this.id}}, 1)">
+              {{#ifEqual ../user.role 'customer'}}
+              <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="addToCart({{this.id}}, 1)">
                 <i class="bi bi-cart-plus"></i> Thêm giỏ hàng
               </button>
+              {{/ifEqual}}
               <a href="/products/{{this.id}}" class="btn btn-primary btn-sm w-100">
                 <i class="bi bi-eye"></i> Xem chi tiết
               </a>
@@ -258,61 +265,61 @@
 </section>
 
 <script>
-// Function để thêm sản phẩm vào giỏ hàng
-async function addToCart(productId, quantity) {
-  try {
-    const response = await fetch('/cart/add', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        product_id: productId,
-        quantity: quantity
-      })
-    });
+  // Function để thêm sản phẩm vào giỏ hàng
+  async function addToCart(productId, quantity) {
+    try {
+      const response = await fetch('/cart/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          quantity: quantity
+        })
+      });
 
-    const result = await response.json();
-    
-    if (result.success) {
-      // Hiển thị thông báo thành công
-      showAlert('Đã thêm sản phẩm vào giỏ hàng!', 'success');
-      // Cập nhật số lượng giỏ hàng
-      updateCartCount(result.cartItemsCount);
-    } else {
-      showAlert(result.message || 'Có lỗi xảy ra!', 'error');
+      const result = await response.json();
+
+      if (result.success) {
+        // Hiển thị thông báo thành công
+        showAlert('Đã thêm sản phẩm vào giỏ hàng!', 'success');
+        // Cập nhật số lượng giỏ hàng
+        updateCartCount(result.cartItemsCount);
+      } else {
+        showAlert(result.message || 'Có lỗi xảy ra!', 'error');
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      showAlert('Có lỗi xảy ra khi thêm vào giỏ hàng!', 'error');
     }
-  } catch (error) {
-    console.error('Error adding to cart:', error);
-    showAlert('Có lỗi xảy ra khi thêm vào giỏ hàng!', 'error');
   }
-}
 
-// Helper functions
-function showAlert(message, type) {
-  // Tạo alert element
-  const alertDiv = document.createElement('div');
-  alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
-  alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-  alertDiv.innerHTML = `
+  // Helper functions
+  function showAlert(message, type) {
+    // Tạo alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
     ${message}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   `;
-  
-  document.body.appendChild(alertDiv);
-  
-  // Tự động xóa sau 3 giây
-  setTimeout(() => {
-    if (alertDiv.parentNode) {
-      alertDiv.parentNode.removeChild(alertDiv);
-    }
-  }, 3000);
-}
 
-function updateCartCount(count) {
-  const cartBadge = document.querySelector('.cart-badge');
-  if (cartBadge) {
-    cartBadge.textContent = count;
+    document.body.appendChild(alertDiv);
+
+    // Tự động xóa sau 3 giây
+    setTimeout(() => {
+      if (alertDiv.parentNode) {
+        alertDiv.parentNode.removeChild(alertDiv);
+      }
+    }, 3000);
   }
-}
+
+  function updateCartCount(count) {
+    const cartBadge = document.querySelector('.cart-badge');
+    if (cartBadge) {
+      cartBadge.textContent = count;
+    }
+  }
 </script>

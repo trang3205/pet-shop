@@ -6,22 +6,58 @@ import db from "../utils/db.js";
 
 const router = express.Router();
 
-// GET /categories - Trang danh sách categories (TẤT CẢ SẢN PHẨM)
+// GET /categories - Trang danh sách categories với search + filter
 router.get("/", async (req, res) => {
   try {
-    const { page = 1, limit = 12, sort = 'newest' } = req.query;
+    const { 
+      page = 1, 
+      limit = 12, 
+      sort = 'newest',
+      q = '', // search query
+      category: categoryId = '' // filter by category
+    } = req.query;
     
-    console.log("🔄 CATEGORIES PAGE - All products");
+    console.log("🔄 CATEGORIES PAGE - Search:", q, "Category:", categoryId);
     
     // Lấy tất cả sản phẩm active
     let query = ProductModel.getBaseQuery();
     
-    // Count total products
-    const countResult = await db("products")
-      .count('* as total')
-      .where("products.is_active", true)
-      .first();
+    // Áp dụng search nếu có
+    if (q && q.trim() !== '') {
+      const searchTerm = `%${q.trim()}%`;
+      query = query.where(function() {
+        this.where('products.name', 'ilike', searchTerm)
+          .orWhere('products.short_description', 'ilike', searchTerm)
+          .orWhere('products.description', 'ilike', searchTerm)
+          .orWhere('categories.name', 'ilike', searchTerm);
+      });
+    }
     
+    // Áp dụng category filter nếu có
+    if (categoryId && !isNaN(categoryId)) {
+      query = query.where("products.category_id", parseInt(categoryId));
+    }
+    
+    // Count total products với điều kiện search/filter
+    let countQuery = db("products")
+      .leftJoin("categories", "products.category_id", "categories.id")
+      .where("products.is_active", true);
+    
+    if (q && q.trim() !== '') {
+      const searchTerm = `%${q.trim()}%`;
+      countQuery = countQuery.where(function() {
+        this.where('products.name', 'ilike', searchTerm)
+          .orWhere('products.short_description', 'ilike', searchTerm)
+          .orWhere('products.description', 'ilike', searchTerm)
+          .orWhere('categories.name', 'ilike', searchTerm);
+      });
+    }
+    
+    if (categoryId && !isNaN(categoryId)) {
+      countQuery = countQuery.where("products.category_id", parseInt(categoryId));
+    }
+    
+    const countResult = await countQuery.count('* as total').first();
     const totalProducts = parseInt(countResult.total, 10);
     
     // Apply sorting
@@ -49,11 +85,19 @@ router.get("/", async (req, res) => {
     // Get all categories for sidebar
     const categories = await CategoryModel.findAllActive();
     
+    // Get category info nếu có filter
+    let category = null;
+    if (categoryId && !isNaN(categoryId)) {
+      category = await CategoryModel.findById(parseInt(categoryId));
+    }
+    
     res.render("vwProduct/index", {
-      title: "Tất cả sản phẩm - PetShop",
+      title: q ? `Tìm kiếm: "${q}" - PetShop` : "Tất cả sản phẩm - PetShop",
       products,
       categories,
+      category,
       currentSort: sort,
+      searchQuery: q,
       pagination: {
         page: parseInt(page, 10),
         limit: parseInt(limit, 10),
@@ -77,13 +121,15 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET /categories/:id - Sản phẩm theo category
+// routes/category.route.js - SỬA PHẦN NÀY
+
+// GET /categories/:id - Sản phẩm theo category + search
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { page = 1, limit = 12, sort = 'newest' } = req.query;
+    const { page = 1, limit = 12, sort = 'newest', q = '' } = req.query;
     
-    console.log("🔄 CATEGORY PRODUCTS - ID:", id);
+    console.log("🔄 CATEGORY PRODUCTS - ID:", id, "Search:", q);
     
     if (isNaN(id)) {
       return res.status(404).render("404", { 
@@ -92,7 +138,6 @@ router.get("/:id", async (req, res) => {
     }
     
     const category = await CategoryModel.findById(parseInt(id));
-    console.log("🔄 CATEGORY DATA:", category);
     
     if (!category) {
       return res.status(404).render("404", { 
@@ -103,15 +148,33 @@ router.get("/:id", async (req, res) => {
     let query = ProductModel.getBaseQuery()
       .where("products.category_id", category.id);
     
-    // Count total products in category
-    const countResult = await db("products")
-      .count('* as total')
-      .where("products.is_active", true)
-      .where("products.category_id", category.id)
-      .first();
+    // 🔥 QUAN TRỌNG: Áp dụng search query nếu có
+    if (q && q.trim() !== '') {
+      const searchTerm = `%${q.trim()}%`;
+      query = query.andWhere(function() {
+        this.where('products.name', 'ilike', searchTerm)
+          .orWhere('products.short_description', 'ilike', searchTerm)
+          .orWhere('products.description', 'ilike', searchTerm);
+      });
+    }
     
+    // Count total products với search
+    let countQuery = db("products")
+      .where("products.is_active", true)
+      .where("products.category_id", category.id);
+    
+    // 🔥 QUAN TRỌNG: Count với search query
+    if (q && q.trim() !== '') {
+      const searchTerm = `%${q.trim()}%`;
+      countQuery = countQuery.andWhere(function() {
+        this.where('products.name', 'ilike', searchTerm)
+          .orWhere('products.short_description', 'ilike', searchTerm)
+          .orWhere('products.description', 'ilike', searchTerm);
+      });
+    }
+    
+    const countResult = await countQuery.count('* as total').first();
     const totalProducts = parseInt(countResult.total, 10);
-    console.log("🔄 TOTAL PRODUCTS IN CATEGORY:", totalProducts);
     
     // Apply sorting
     switch(sort) {
@@ -135,17 +198,16 @@ router.get("/:id", async (req, res) => {
     const offset = (page - 1) * limit;
     const products = await query.offset(offset).limit(limit);
     
-    console.log("🔄 PRODUCTS FOUND:", products.length);
-    
     // Get all categories for sidebar
     const categories = await CategoryModel.findAllActive();
     
     res.render("vwProduct/index", {
-      title: `${category.name} - PetShop`,
+      title: q ? `Tìm kiếm: "${q}" - ${category.name}` : `${category.name} - PetShop`,
       products,
       category,
       categories,
       currentSort: sort,
+      searchQuery: q, // 🔥 QUAN TRỌNG: Truyền searchQuery vào template
       pagination: {
         page: parseInt(page, 10),
         limit: parseInt(limit, 10),

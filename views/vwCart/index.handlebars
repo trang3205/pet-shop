@@ -1,0 +1,334 @@
+<!-- views/vwCart/index.handlebars -->
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h2 mb-4">Giỏ hàng của bạn</h1>
+        </div>
+    </div>
+
+    {{#if error}}
+    <div class="alert alert-danger">
+        {{error}}
+    </div>
+    {{/if}}
+
+    <div class="row">
+        <!-- Cart Items -->
+        <div class="col-lg-8">
+            {{#if items.length}}
+            <div class="card">
+                <div class="card-body">
+                    {{#each items}}
+                    <div class="cart-item border-bottom pb-3 mb-3" data-product-id="{{this.product_id}}">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                <img src="{{this.main_image_url}}" alt="{{this.name}}" 
+                                     class="img-fluid rounded" style="height: 80px; object-fit: cover;"
+                                     onerror="this.src='/static/imgs/products/default-product.jpg'">
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="mb-1">{{this.name}}</h6>
+                                <small class="text-muted">SKU: {{this.sku}}</small>
+                                {{#unless this.is_active}}
+                                <div class="text-danger small">Sản phẩm không khả dụng</div>
+                                {{/unless}}
+                            </div>
+                            <div class="col-md-2">
+                                <div class="price">
+                                    {{#if this.discount_price}}
+                                    <div class="text-danger fw-bold">{{formatCurrency this.discount_price}}</div>
+                                    <small class="text-muted text-decoration-line-through">{{formatCurrency this.price}}</small>
+                                    {{else}}
+                                    <div class="text-primary fw-bold">{{formatCurrency this.price}}</div>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="input-group input-group-sm">
+                                    <button class="btn btn-outline-secondary decrease-btn" type="button">-</button>
+                                    <input type="number" class="form-control text-center quantity-input" 
+                                           value="{{this.quantity}}" min="1" max="{{this.stock_quantity}}"
+                                           data-product-id="{{this.product_id}}">
+                                    <button class="btn btn-outline-secondary increase-btn" type="button">+</button>
+                                </div>
+                                <small class="text-muted d-block mt-1">Còn: {{this.stock_quantity}} sp</small>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-end">
+                                    <div class="fw-bold mb-2 item-total" data-product-id="{{this.product_id}}">
+                                        {{formatCurrency (multiply (default this.discount_price this.price) this.quantity)}}
+                                    </div>
+                                    <button class="btn btn-outline-danger btn-sm remove-btn" 
+                                            data-product-id="{{this.product_id}}">
+                                        <i class="bi bi-trash"></i> Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+            {{else}}
+            <div class="card text-center py-5">
+                <div class="card-body">
+                    <i class="bi bi-cart-x display-1 text-muted"></i>
+                    <h3 class="mt-3">Giỏ hàng trống</h3>
+                    <p class="text-muted">Bạn chưa có sản phẩm nào trong giỏ hàng</p>
+                    <a href="/" class="btn btn-primary">Tiếp tục mua sắm</a>
+                </div>
+            </div>
+            {{/if}}
+        </div>
+
+        <!-- Cart Summary -->
+        {{#if items.length}}
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Tổng đơn hàng</h5>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="items-count">Tạm tính ({{totalItems}} sản phẩm):</span>
+                        <span class="fw-bold subtotal-amount">{{formatCurrency subtotal}}</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Phí vận chuyển:</span>
+                        <span class="text-success">Miễn phí</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="h5">Tổng cộng:</span>
+                        <span class="h5 text-danger total-amount">{{formatCurrency subtotal}}</span>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="/checkout" class="btn btn-danger btn-lg">
+                            <i class="bi bi-credit-card"></i> Thanh toán
+                        </a>
+                        <a href="/" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left"></i> Tiếp tục mua sắm
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('CART PAGE LOADED');
+
+    // Update quantity
+    document.querySelectorAll('.quantity-input').forEach(input => {
+        const productId = input.dataset.productId;
+        console.log('🔧 SETUP QUANTITY INPUT FOR PRODUCT:', productId);
+        
+        // Decrease button
+        input.closest('.input-group').querySelector('.decrease-btn').addEventListener('click', () => {
+            const currentValue = parseInt(input.value);
+            if (currentValue > 1) {
+                updateQuantity(productId, currentValue - 1);
+            }
+        });
+
+        // Increase button
+        input.closest('.input-group').querySelector('.increase-btn').addEventListener('click', () => {
+            const currentValue = parseInt(input.value);
+            const maxStock = parseInt(input.getAttribute('max'));
+            if (currentValue < maxStock) {
+                updateQuantity(productId, currentValue + 1);
+            } else {
+                showAlert(`Chỉ còn ${maxStock} sản phẩm trong kho`, 'warning');
+            }
+        });
+
+        // Input change
+        input.addEventListener('change', function() {
+            let value = parseInt(this.value);
+            const min = parseInt(this.getAttribute('min'));
+            const max = parseInt(this.getAttribute('max'));
+
+            if (isNaN(value) || value < min) value = min;
+            if (value > max) {
+                value = max;
+                showAlert(`Chỉ còn ${max} sản phẩm trong kho`, 'warning');
+            }
+
+            this.value = value;
+            updateQuantity(productId, value);
+        });
+    });
+
+    // Remove item
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            console.log('🗑️ REMOVE BUTTON CLICKED FOR PRODUCT:', productId);
+            removeFromCart(productId);
+        });
+    });
+
+    async function updateQuantity(productId, quantity) {
+        console.log('🔄 UPDATING QUANTITY - Product:', productId, 'New Qty:', quantity);
+        
+        try {
+            const response = await fetch('/cart/update', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: parseInt(productId),
+                    quantity: parseInt(quantity)
+                })
+            });
+
+            const result = await response.json();
+            console.log('📦 UPDATE RESPONSE:', result);
+
+            if (result.success) {
+                showAlert(result.message, 'success');
+                updateCartDisplay(result);
+                
+                // Update input value
+                const input = document.querySelector(`.quantity-input[data-product-id="${productId}"]`);
+                if (input) {
+                    input.value = quantity;
+                }
+            } else {
+                showAlert(result.message, 'error');
+                // Reload to sync with server
+                setTimeout(() => location.reload(), 1000);
+            }
+        } catch (error) {
+            console.error('❌ Error updating quantity:', error);
+            showAlert('Có lỗi xảy ra khi cập nhật số lượng', 'error');
+        }
+    }
+
+    async function removeFromCart(productId) {
+        console.log('🗑️ REMOVING FROM CART - Product:', productId);
+        
+        if (!confirm('Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/cart/remove', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: parseInt(productId)
+                })
+            });
+
+            const result = await response.json();
+            console.log('📦 REMOVE RESPONSE:', result);
+
+            if (result.success) {
+                showAlert(result.message, 'success');
+                updateCartDisplay(result);
+                
+                // Remove item from DOM
+                const itemElement = document.querySelector(`.cart-item[data-product-id="${productId}"]`);
+                if (itemElement) {
+                    itemElement.remove();
+                }
+                
+                // Check if cart is empty
+                if (result.totalItems === 0) {
+                    setTimeout(() => location.reload(), 500);
+                }
+            } else {
+                showAlert(result.message, 'error');
+            }
+        } catch (error) {
+            console.error('❌ Error removing from cart:', error);
+            showAlert('Có lỗi xảy ra khi xóa sản phẩm', 'error');
+        }
+    }
+
+    function updateCartDisplay(data) {
+        console.log('🔄 UPDATING CART DISPLAY:', data);
+        
+        // Update cart count in navbar
+        updateCartCount(data.totalItems);
+        
+        // Update totals in cart page
+        if (document.querySelector('.cart-item')) {
+            // Update items count
+            const itemsCountElement = document.querySelector('.items-count');
+            if (itemsCountElement) {
+                itemsCountElement.textContent = `Tạm tính (${data.totalItems} sản phẩm):`;
+            }
+            
+            // Update subtotal
+            const subtotalElement = document.querySelector('.subtotal-amount');
+            const totalElement = document.querySelector('.total-amount');
+            if (subtotalElement && totalElement) {
+                subtotalElement.textContent = formatCurrency(data.subtotal);
+                totalElement.textContent = formatCurrency(data.subtotal);
+            }
+            
+            // Update individual item totals
+            if (data.items) {
+                data.items.forEach(item => {
+                    const itemTotalElement = document.querySelector(`.item-total[data-product-id="${item.product_id}"]`);
+                    if (itemTotalElement) {
+                        const price = item.discount_price || item.price;
+                        const total = price * item.quantity;
+                        itemTotalElement.textContent = formatCurrency(total);
+                    }
+                });
+            }
+        }
+    }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
+    }
+
+    function showAlert(message, type) {
+        console.log('📢 ALERT:', type, message);
+        
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'success'} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 4000);
+    }
+
+    function updateCartCount(count) {
+        console.log('🔄 UPDATING CART COUNT:', count);
+        const cartBadge = document.querySelector('.cart-badge');
+        if (cartBadge) {
+            cartBadge.textContent = count;
+        }
+        
+        // Also update any other cart count elements
+        const cartCountElements = document.querySelectorAll('.cart-count');
+        cartCountElements.forEach(el => {
+            el.textContent = count;
+        });
+    }
+});
+</script>

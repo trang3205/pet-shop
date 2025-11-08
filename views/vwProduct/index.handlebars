@@ -11,13 +11,13 @@
                     <!-- Categories Filter -->
                     <h6 class="fw-bold mb-3">Danh mục</h6>
                     <div class="list-group list-group-flush">
-                        <a href="/categories" 
-                           class="list-group-item list-group-item-action {{#unless category}}active{{/unless}}">
+                        <a href="/categories?q={{searchQuery}}"
+                            class="list-group-item list-group-item-action {{#unless category}}active{{/unless}}">
                             Tất cả danh mục
                         </a>
                         {{#each categories}}
-                        <a href="/categories/{{this.id}}" 
-                           class="list-group-item list-group-item-action {{#ifEqual this.id ../category.id}}active{{/ifEqual}}">
+                        <a href="/categories/{{this.id}}?q={{../searchQuery}}"
+                            class="list-group-item list-group-item-action {{#ifEqual this.id ../category.id}}active{{/ifEqual}}">
                             {{this.name}}
                         </a>
                         {{/each}}
@@ -26,24 +26,24 @@
                     <!-- Sorting -->
                     <h6 class="fw-bold mt-4 mb-3">Sắp xếp</h6>
                     <div class="list-group list-group-flush">
-                        <a href="?sort=newest{{#if category}}&id={{category.id}}{{/if}}" 
-                           class="list-group-item list-group-item-action {{#ifEqual currentSort 'newest'}}active{{/ifEqual}}">
+                        <a href="?sort=newest{{#if category}}&id={{category.id}}{{/if}}&q={{searchQuery}}"
+                            class="list-group-item list-group-item-action {{#ifEqual currentSort 'newest'}}active{{/ifEqual}}">
                             Mới nhất
                         </a>
-                        <a href="?sort=price_asc{{#if category}}&id={{category.id}}{{/if}}" 
-                           class="list-group-item list-group-item-action {{#ifEqual currentSort 'price_asc'}}active{{/ifEqual}}">
+                        <a href="?sort=price_asc{{#if category}}&id={{category.id}}{{/if}}&q={{searchQuery}}"
+                            class="list-group-item list-group-item-action {{#ifEqual currentSort 'price_asc'}}active{{/ifEqual}}">
                             Giá thấp đến cao
                         </a>
-                        <a href="?sort=price_desc{{#if category}}&id={{category.id}}{{/if}}" 
-                           class="list-group-item list-group-item-action {{#ifEqual currentSort 'price_desc'}}active{{/ifEqual}}">
+                        <a href="?sort=price_desc{{#if category}}&id={{category.id}}{{/if}}&q={{searchQuery}}"
+                            class="list-group-item list-group-item-action {{#ifEqual currentSort 'price_desc'}}active{{/ifEqual}}">
                             Giá cao đến thấp
                         </a>
-                        <a href="?sort=name{{#if category}}&id={{category.id}}{{/if}}" 
-                           class="list-group-item list-group-item-action {{#ifEqual currentSort 'name'}}active{{/ifEqual}}">
+                        <a href="?sort=name{{#if category}}&id={{category.id}}{{/if}}&q={{searchQuery}}"
+                            class="list-group-item list-group-item-action {{#ifEqual currentSort 'name'}}active{{/ifEqual}}">
                             Tên A-Z
                         </a>
-                        <a href="?sort=rating{{#if category}}&id={{category.id}}{{/if}}" 
-                           class="list-group-item list-group-item-action {{#ifEqual currentSort 'rating'}}active{{/ifEqual}}">
+                        <a href="?sort=rating{{#if category}}&id={{category.id}}{{/if}}&q={{searchQuery}}"
+                            class="list-group-item list-group-item-action {{#ifEqual currentSort 'rating'}}active{{/ifEqual}}">
                             Đánh giá cao
                         </a>
                     </div>
@@ -57,19 +57,30 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="h3 mb-1">
+                        {{#if searchQuery}}
+                        🔍 Kết quả tìm kiếm: "{{searchQuery}}"
                         {{#if category}}
-                            {{category.name}}
+                        trong {{category.name}}
+                        {{/if}}
                         {{else}}
-                            Tất cả danh mục
+                        {{#if category}}
+                        {{category.name}}
+                        {{else}}
+                        Tất cả danh mục
+                        {{/if}}
                         {{/if}}
                     </h1>
                     <p class="text-muted mb-0">
-                        {{#if category}}
-                            Danh mục: {{category.name}}
+                        {{#if searchQuery}}
+                        Tìm thấy {{pagination.total}} sản phẩm phù hợp
                         {{else}}
-                            Tất cả sản phẩm
+                        {{#if category}}
+                        Danh mục: {{category.name}}
+                        {{else}}
+                        Tất cả sản phẩm
                         {{/if}}
                         ({{pagination.total}} sản phẩm)
+                        {{/if}}
                     </p>
                 </div>
                 <div class="text-muted">
@@ -102,7 +113,8 @@
                                 {{#if this.discount_price}}
                                 <div class="d-flex align-items-center">
                                     <strong class="text-danger me-2">{{formatCurrency this.discount_price}}</strong>
-                                    <small class="text-muted text-decoration-line-through">{{formatCurrency this.price}}</small>
+                                    <small class="text-muted text-decoration-line-through">{{formatCurrency
+                                        this.price}}</small>
                                 </div>
                                 {{else}}
                                 <strong class="text-primary">{{formatCurrency this.price}}</strong>
@@ -120,10 +132,12 @@
                             </div>
 
                             <div class="mt-auto">
+                                {{#ifEqual ../user.role 'customer'}}
                                 <button class="btn btn-outline-primary btn-sm w-100 mb-2"
                                     onclick="addToCart({{this.id}}, 1)">
                                     <i class="bi bi-cart-plus"></i> Thêm giỏ hàng
                                 </button>
+                                {{/ifEqual}}
                                 <a href="/products/{{this.id}}" class="btn btn-primary btn-sm w-100">
                                     <i class="bi bi-eye"></i> Xem chi tiết
                                 </a>
@@ -134,51 +148,51 @@
                 {{/each}}
             </div>
 
-            <!-- Pagination - Fixed version -->
+            <!-- Pagination -->
             {{#if pagination.pages}}
-                {{#ifEqual pagination.pages 1}}
-                    <!-- Only one page, no pagination needed -->
-                {{else}}
-                <nav class="mt-5">
-                    <ul class="pagination justify-content-center">
-                        {{#if pagination.page}}
-                            {{#ifEqual pagination.page 1}}
-                                <!-- First page, no previous -->
-                            {{else}}
-                            <li class="page-item">
-                                <a class="page-link" 
-                                   href="?page={{subtract pagination.page 1}}{{#if category}}&id={{category.id}}{{/if}}{{#if currentSort}}&sort={{currentSort}}{{/if}}">
-                                    <i class="bi bi-chevron-left"></i>
-                                </a>
-                            </li>
-                            {{/ifEqual}}
-                        {{/if}}
+            {{#ifEqual pagination.pages 1}}
+            <!-- Only one page, no pagination needed -->
+            {{else}}
+            <nav class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {{#if pagination.page}}
+                    {{#ifEqual pagination.page 1}}
+                    <!-- First page, no previous -->
+                    {{else}}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?page={{subtract pagination.page 1}}{{#if category}}&id={{category.id}}{{/if}}{{#if currentSort}}&sort={{currentSort}}{{/if}}{{#if searchQuery}}&q={{searchQuery}}{{/if}}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {{/ifEqual}}
+                    {{/if}}
 
-                        <!-- Simple page numbers -->
-                        {{#each (arrayRange pagination.pages)}}
-                        <li class="page-item {{#ifEqual this ../pagination.page}}active{{/ifEqual}}">
-                            <a class="page-link" 
-                               href="?page={{this}}{{#if ../category}}&id={{../category.id}}{{/if}}{{#if ../currentSort}}&sort={{../currentSort}}{{/if}}">
-                                {{this}}
-                            </a>
-                        </li>
-                        {{/each}}
+                    <!-- Simple page numbers -->
+                    {{#each (arrayRange pagination.pages)}}
+                    <li class="page-item {{#ifEqual this ../pagination.page}}active{{/ifEqual}}">
+                        <a class="page-link"
+                            href="?page={{this}}{{#if ../category}}&id={{../category.id}}{{/if}}{{#if ../currentSort}}&sort={{../currentSort}}{{/if}}{{#if ../searchQuery}}&q={{../searchQuery}}{{/if}}">
+                            {{this}}
+                        </a>
+                    </li>
+                    {{/each}}
 
-                        {{#if pagination.page}}
-                            {{#ifEqual pagination.page pagination.pages}}
-                                <!-- Last page, no next -->
-                            {{else}}
-                            <li class="page-item">
-                                <a class="page-link" 
-                                   href="?page={{add pagination.page 1}}{{#if category}}&id={{category.id}}{{/if}}{{#if currentSort}}&sort={{currentSort}}{{/if}}">
-                                    <i class="bi bi-chevron-right"></i>
-                                </a>
-                            </li>
-                            {{/ifEqual}}
-                        {{/if}}
-                    </ul>
-                </nav>
-                {{/ifEqual}}
+                    {{#if pagination.page}}
+                    {{#ifEqual pagination.page pagination.pages}}
+                    <!-- Last page, no next -->
+                    {{else}}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?page={{add pagination.page 1}}{{#if category}}&id={{category.id}}{{/if}}{{#if currentSort}}&sort={{currentSort}}{{/if}}{{#if searchQuery}}&q={{searchQuery}}{{/if}}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {{/ifEqual}}
+                    {{/if}}
+                </ul>
+            </nav>
+            {{/ifEqual}}
             {{/if}}
 
             {{else}}

@@ -5,6 +5,7 @@ import ProductModel from "../models/product.model.js";
 const router = express.Router();
 
 // Trang chủ
+// routes/home.route.js - THÊM USER VÀO
 router.get("/", async (req, res) => {
   try {
     const [
@@ -24,8 +25,8 @@ router.get("/", async (req, res) => {
       featuredProducts,
       newProducts,
       bestSellingProducts,
-      banners
-      // 🚨 XÓA: user: req.user - đã có trong res.locals
+      banners,
+      user: req.session.user // ← THÊM DÒNG NÀY
     });
   } catch (error) {
     console.error("Home page error:", error);
@@ -34,8 +35,8 @@ router.get("/", async (req, res) => {
       featuredProducts: [],
       newProducts: [],
       bestSellingProducts: [],
-      banners: []
-      // 🚨 XÓA: user: req.user
+      banners: [],
+      user: req.session.user // ← THÊM VÀO ĐÂY NỮA
     });
   }
 });

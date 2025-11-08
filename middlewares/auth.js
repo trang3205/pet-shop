@@ -17,19 +17,17 @@ export function authenticateUser(req, res, next) {
 }
 
 // Middleware lấy số lượng giỏ hàng
+// middlewares/auth.js - cập nhật hàm getCartCount
 export async function getCartCount(req, res, next) {
   try {
     if (req.session && req.session.user) {
-      const db = await import('../utils/db.js');
-      const result = await db.default('cart_items')
-        .where('user_id', req.session.user.id)
-        .count('id as count')
-        .first();
-      res.locals.cartItemsCount = result?.count || 0;
-      console.log('🛒 CART COUNT:', res.locals.cartItemsCount);
+      const CartModel = await import('../models/cart.model.js');
+      const count = await CartModel.default.getItemsCount(req.session.user.id);
+      res.locals.cartItemsCount = count;
+      console.log('CART COUNT:', res.locals.cartItemsCount);
     } else {
       res.locals.cartItemsCount = 0;
-      console.log('🛒 NO CART - User not logged in');
+      console.log('NO CART - User not logged in');
     }
   } catch (error) {
     console.error('Error getting cart count:', error);
@@ -111,3 +109,25 @@ export async function getCategories(req, res, next) {
   }
   next();
 }
+
+// Thêm vào middlewares/auth.js - ở cuối file
+export const getWishlistCount = async (req, res, next) => {
+  try {
+    if (req.session && req.session.user) {
+      const db = await import('../utils/db.js');
+      const wishlistCount = await db.default("wishlists")
+        .where("user_id", req.session.user.id)
+        .count('* as count')
+        .first();
+      
+      res.locals.wishlistCount = parseInt(wishlistCount.count, 10) || 0;
+      console.log(' WISHLIST COUNT:', res.locals.wishlistCount);
+    } else {
+      res.locals.wishlistCount = 0;
+    }
+  } catch (error) {
+    console.error("Error getting wishlist count:", error);
+    res.locals.wishlistCount = 0;
+  }
+  next();
+};

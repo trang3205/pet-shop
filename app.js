@@ -11,11 +11,14 @@ import homeRouter from './routes/home.route.js';
 import productRouter from './routes/product.route.js';
 import accountRoute from './routes/account.route.js';
 import categoryRouter from './routes/category.route.js';
+import wishlistRouter from './routes/wishlist.route.js';
+import cartRouter from './routes/cart.route.js';
 // Middlewares
 import {
   authenticateUser,
   getCartCount,
-  getCategories
+  getCategories,
+  getWishlistCount
 } from './middlewares/auth.js';
 
 // QUAN TRỌNG: Import db.js để khởi tạo kết nối database
@@ -67,6 +70,15 @@ app.engine(
           currency: 'VND'
         }).format(amount);
       },
+      formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+      },
       arrayRange(count) {
         const arr = [];
         for (let i = 1; i <= count; i++) {
@@ -114,6 +126,9 @@ app.engine(
       default: function (value, defaultValue) {
         return value !== undefined && value !== null ? value : defaultValue;
       },
+      multiply: function (a, b) {
+        return a * b;
+      },
     },
   })
 );
@@ -124,6 +139,7 @@ app.set("views", "./views");
 // STATIC FILES & MIDDLEWARE
 // ======================
 app.use("/static", express.static("static"));
+app.use(express.json());
 app.use(
   express.urlencoded({
     extended: true,
@@ -136,6 +152,7 @@ app.use(
 app.use(authenticateUser);
 app.use(getCartCount);
 app.use(getCategories);
+app.use(getWishlistCount);
 // ======================
 // DEBUG MIDDLEWARE - XÓA SAU KHI FIX
 // ======================
@@ -151,11 +168,13 @@ app.use('/', homeRouter);
 app.use('/categories', categoryRouter);
 app.use('/products', productRouter);
 app.use('/account', accountRoute);
-
+app.use('/user', wishlistRouter);
+app.use('/cart', cartRouter);
 // ======================
 // 404 ERROR HANDLER
 // ======================
 app.use((req, res) => {
+
   res.status(404).render('404', {
     title: 'Không tìm thấy trang'
   });
