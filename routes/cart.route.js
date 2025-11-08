@@ -52,14 +52,17 @@ router.post("/add", requireAuth, requireCustomer, async (req, res) => {
 
 
 // Xem giỏ hàng
+// routes/cart.route.js - CẬP NHẬT ROUTE HIỆN TẠI
 router.get("/", requireAuth, requireCustomer, async (req, res) => {
   try {
     const userId = req.session.user.id;
     const cartData = await CartModel.calculateTotal(userId);
 
+    // Thêm allItems để hiển thị tất cả sản phẩm
     res.render("vwCart/index", {
       title: "Giỏ hàng của bạn",
-      ...cartData
+      ...cartData,
+      allItems: cartData.items // Thêm để hiển thị checkbox
     });
 
   } catch (error) {
@@ -69,6 +72,7 @@ router.get("/", requireAuth, requireCustomer, async (req, res) => {
       subtotal: 0,
       totalItems: 0,
       items: [],
+      allItems: [],
       error: "Có lỗi xảy ra khi tải giỏ hàng"
     });
   }
@@ -158,5 +162,36 @@ router.get("/count", requireAuth, async (req, res) => {
     });
   }
 });
+// Tính tổng tiền cho các sản phẩm được chọn
+router.post("/selected-total", requireAuth, requireCustomer, async (req, res) => {
+  try {
+    const { selected_products } = req.body;
+    const userId = req.session.user.id;
 
+    console.log('💰 CALCULATING SELECTED TOTAL:', selected_products);
+
+    if (!selected_products || !Array.isArray(selected_products)) {
+      return res.json({
+        success: false,
+        message: "Danh sách sản phẩm không hợp lệ"
+      });
+    }
+
+    const result = await CartModel.calculateSelectedTotal(userId, selected_products);
+
+    res.json({
+      success: true,
+      subtotal: result.subtotal,
+      totalItems: result.totalItems,
+      items: result.items
+    });
+
+  } catch (error) {
+    console.error("Calculate selected total error:", error);
+    res.json({
+      success: false,
+      message: error.message || "Có lỗi xảy ra khi tính tổng tiền"
+    });
+  }
+});
 export default router;
