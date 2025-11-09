@@ -105,7 +105,11 @@ app.engine(
         if (b === undefined || b === null) return options.inverse(this);
         return a > b ? options.fn(this) : options.inverse(this);
       },
-
+      // ✅ THÊM HELPER MỚI: ifLess
+      ifLess: function (a, b, options) {
+        if (b === undefined || b === null) return options.inverse(this);
+        return a < b ? options.fn(this) : options.inverse(this);
+      },
       getRatingStats: function (rating, stats) {
         // Kiểm tra nếu stats không tồn tại hoặc không có reviews
         if (!stats || !stats.total_reviews || stats.total_reviews === 0) {
@@ -157,13 +161,13 @@ app.use(getWishlistCount);
 // DEBUG MIDDLEWARE - XÓA SAU KHI FIX
 // ======================
 app.use((req, res, next) => {
-   // Tạo CSRF token cho mỗi request
-    res.locals.csrfToken = Math.random().toString(36).substring(2, 15) + 
-                          Math.random().toString(36).substring(2, 15);
-    
-    console.log('🔍 DEBUG MIDDLEWARE - res.locals.user:', res.locals.user);
-    console.log('🛡️ CSRF Token generated:', res.locals.csrfToken);
-    next();
+  // Tạo CSRF token cho mỗi request
+  res.locals.csrfToken = Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15);
+
+  console.log('🔍 DEBUG MIDDLEWARE - res.locals.user:', res.locals.user);
+  console.log('🛡️ CSRF Token generated:', res.locals.csrfToken);
+  next();
 });
 
 // ======================

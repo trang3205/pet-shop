@@ -149,26 +149,24 @@
             </div>
 
             <!-- Pagination -->
+            <!-- Pagination - IMPROVED VERSION -->
+            <!-- Pagination - SIMPLE VERSION -->
             {{#if pagination.pages}}
             {{#ifEqual pagination.pages 1}}
             <!-- Only one page, no pagination needed -->
             {{else}}
             <nav class="mt-5">
                 <ul class="pagination justify-content-center">
-                    {{#if pagination.page}}
-                    {{#ifEqual pagination.page 1}}
-                    <!-- First page, no previous -->
-                    {{else}}
-                    <li class="page-item">
+                    <!-- Previous Button -->
+                    <li class="page-item {{#ifEqual pagination.page 1}}disabled{{/ifEqual}}">
                         <a class="page-link"
-                            href="?page={{subtract pagination.page 1}}{{#if category}}&id={{category.id}}{{/if}}{{#if currentSort}}&sort={{currentSort}}{{/if}}{{#if searchQuery}}&q={{searchQuery}}{{/if}}">
-                            <i class="bi bi-chevron-left"></i>
+                            href="?page={{subtract pagination.page 1}}{{#if category}}&id={{category.id}}{{/if}}{{#if currentSort}}&sort={{currentSort}}{{/if}}{{#if searchQuery}}&q={{searchQuery}}{{/if}}"
+                            {{#ifEqual pagination.page 1}}tabindex="-1" aria-disabled="true" {{/ifEqual}}>
+                            ‹ Trước
                         </a>
                     </li>
-                    {{/ifEqual}}
-                    {{/if}}
 
-                    <!-- Simple page numbers -->
+                    <!-- Simple Page Numbers -->
                     {{#each (arrayRange pagination.pages)}}
                     <li class="page-item {{#ifEqual this ../pagination.page}}active{{/ifEqual}}">
                         <a class="page-link"
@@ -178,18 +176,15 @@
                     </li>
                     {{/each}}
 
-                    {{#if pagination.page}}
-                    {{#ifEqual pagination.page pagination.pages}}
-                    <!-- Last page, no next -->
-                    {{else}}
-                    <li class="page-item">
+                    <!-- Next Button -->
+                    <li class="page-item {{#ifEqual pagination.page pagination.pages}}disabled{{/ifEqual}}">
                         <a class="page-link"
-                            href="?page={{add pagination.page 1}}{{#if category}}&id={{category.id}}{{/if}}{{#if currentSort}}&sort={{currentSort}}{{/if}}{{#if searchQuery}}&q={{searchQuery}}{{/if}}">
-                            <i class="bi bi-chevron-right"></i>
+                            href="?page={{add pagination.page 1}}{{#if category}}&id={{category.id}}{{/if}}{{#if currentSort}}&sort={{currentSort}}{{/if}}{{#if searchQuery}}&q={{searchQuery}}{{/if}}"
+                            {{#ifEqual pagination.page pagination.pages}}tabindex="-1" aria-disabled="true"
+                            {{/ifEqual}}>
+                            Sau ›
                         </a>
                     </li>
-                    {{/ifEqual}}
-                    {{/if}}
                 </ul>
             </nav>
             {{/ifEqual}}
@@ -208,13 +203,19 @@
 </div>
 
 <script>
+    // Thêm hàm CSRF
+    function getCSRFToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    }
     // Function để thêm sản phẩm vào giỏ hàng
+    // Sửa hàm addToCart
     async function addToCart(productId, quantity) {
         try {
             const response = await fetch('/cart/add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRF-Token': getCSRFToken() // ✅ THÊM CSRF
                 },
                 body: JSON.stringify({
                     product_id: productId,
@@ -237,19 +238,29 @@
     }
 
     function showAlert(message, type) {
+        // ✅ FIX: Sử dụng textContent thay vì innerHTML
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
         alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
+
+        // ✅ SAFE: Sử dụng textContent
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = message;
+        alertDiv.appendChild(messageSpan);
+
+        // ✅ SAFE: Tạo button close thủ công
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn-close';
+        closeBtn.setAttribute('data-bs-dismiss', 'alert');
+        closeBtn.setAttribute('aria-label', 'Close');
+        alertDiv.appendChild(closeBtn);
 
         document.body.appendChild(alertDiv);
 
         setTimeout(() => {
             if (alertDiv.parentNode) {
-                alertDiv.parentNode.removeChild(alertDiv);
+                alertDiv.remove();
             }
         }, 3000);
     }
