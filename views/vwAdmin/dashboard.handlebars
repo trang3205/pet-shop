@@ -1,0 +1,131 @@
+<!-- Admin Dashboard -->
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/admin/dashboard">
+                            <i class="bi bi-house-door"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/customers">
+                            <i class="bi bi-people"></i>
+                            Customers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/managers">
+                            <i class="bi bi-person-badge"></i>
+                            Managers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/products">
+                            <i class="bi bi-box"></i>
+                            Products
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Dashboard</h1>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="row">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Customers</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">215</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-people fs-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Total Products</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">89</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-box fs-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Total Orders</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">156</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-cart fs-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Custom styles for the admin dashboard -->
+<style>
+    .sidebar {
+        min-height: 100vh;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .nav-link {
+        color: #4e73df;
+        padding: 1rem;
+    }
+    
+    .nav-link:hover {
+        background-color: #f8f9fc;
+    }
+    
+    .nav-link.active {
+        background-color: #4e73df;
+        color: white;
+    }
+    
+    .border-left-primary {
+        border-left: 4px solid #4e73df;
+    }
+    
+    .border-left-success {
+        border-left: 4px solid #1cc88a;
+    }
+    
+    .border-left-info {
+        border-left: 4px solid #36b9cc;
+    }
+</style>

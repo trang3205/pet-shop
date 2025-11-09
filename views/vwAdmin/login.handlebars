@@ -1,0 +1,115 @@
+<!-- Admin Login Page -->
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-dark text-white text-center py-3">
+                    <h4 class="mb-0">
+                        <i class="bi bi-shield-lock"></i> Admin Login
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    {{#if error}}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i> {{error}}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {{/if}}
+
+                    <form action="/account/login" method="POST">
+                        <input type="hidden" name="redirectTo" value="/admin/dashboard">
+                        
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Admin Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-envelope"></i>
+                                </span>
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="email" 
+                                       name="email" 
+                                       placeholder="admin@example.com"
+                                       required>
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="mb-4">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-key"></i>
+                                </span>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="password" 
+                                       name="password" 
+                                       placeholder="Enter your password"
+                                       required>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-dark btn-lg">
+                                <i class="bi bi-box-arrow-in-right"></i> Login as Admin
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="mt-4 text-center">
+                        <a href="/account/login" class="text-decoration-none">
+                            <i class="bi bi-arrow-left"></i> Back to Customer Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Notice -->
+            <div class="alert alert-info mt-4">
+                <i class="bi bi-info-circle"></i> This login is for administrators only. 
+                If you're a customer, please use the <a href="/account/login" class="alert-link">customer login</a>.
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 15px;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+}
+
+.form-control:focus {
+    border-color: #212529;
+    box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.25);
+}
+
+.btn-dark:hover {
+    background-color: #343a40;
+}
+</style>
+
+<style>
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0;
+}
+
+.btn-primary {
+    padding: 10px;
+}
+</style>

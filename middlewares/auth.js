@@ -56,7 +56,13 @@ export function requireGuest(req, res, next) {
 
 // Kiểm tra quyền Admin
 export function requireAdmin(req, res, next) {
-  if (!req.session || !req.session.user || req.session.user.role !== 'admin') {
+  if (!req.session || !req.session.user) {
+    // Nếu chưa đăng nhập, chuyển đến trang login
+    return res.redirect('/admin/login');
+  }
+  
+  if (req.session.user.role !== 'admin') {
+    // Nếu đã đăng nhập nhưng không phải admin
     return res.status(403).render('404', { 
       title: 'Truy cập bị từ chối',
       message: 'Bạn không có quyền truy cập trang này.' 

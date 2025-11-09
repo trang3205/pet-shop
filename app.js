@@ -11,6 +11,7 @@ import homeRouter from './routes/home.route.js';
 import productRouter from './routes/product.route.js';
 import accountRoute from './routes/account.route.js';
 import categoryRouter from './routes/category.route.js';
+import adminRouter from './routes/admin.route.js';
 // Middlewares
 import {
   authenticateUser,
@@ -25,6 +26,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// ======================
+// SESSION CONFIGURATION
+// ======================
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
 
 // ======================
 // TRUST PROXY SETTING
@@ -54,6 +68,9 @@ app.engine(
   engine({
     helpers: {
       fill_section: hbs_sections(),
+      eq: function (v1, v2) {
+        return v1 === v2;
+      },
       formatNumber(value) {
         return new Intl.NumberFormat("en-US").format(value);
       },
@@ -147,6 +164,7 @@ app.use((req, res, next) => {
 // ======================
 // ROUTES SETUP
 // ======================
+app.use('/admin', adminRouter);
 app.use('/', homeRouter);
 app.use('/categories', categoryRouter);
 app.use('/products', productRouter);
