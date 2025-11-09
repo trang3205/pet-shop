@@ -92,6 +92,8 @@ router.put("/update", requireAuth, requireCustomer, async (req, res) => {
     }
 
     const result = await CartModel.updateQuantity(userId, product_id, parseInt(quantity));
+    
+    // Lấy toàn bộ cart data để trả về tất cả items
     const cartData = await CartModel.calculateTotal(userId);
 
     res.json({
@@ -99,8 +101,9 @@ router.put("/update", requireAuth, requireCustomer, async (req, res) => {
       message: result.action === "removed" 
         ? "Đã xóa sản phẩm khỏi giỏ hàng" 
         : "Đã cập nhật số lượng",
-      ...cartData,
-      action: result.action
+      ...cartData, // Trả về tất cả items, subtotal, totalItems
+      action: result.action,
+      updatedProductId: product_id // Thêm ID sản phẩm được update
     });
 
   } catch (error) {
@@ -131,7 +134,8 @@ router.delete("/remove", requireAuth, requireCustomer, async (req, res) => {
     res.json({
       success: true,
       message: "Đã xóa sản phẩm khỏi giỏ hàng",
-      ...cartData
+      ...cartData,
+      removedProductId: product_id // Thêm ID sản phẩm bị xóa
     });
 
   } catch (error) {
@@ -191,6 +195,60 @@ router.post("/selected-total", requireAuth, requireCustomer, async (req, res) =>
     res.json({
       success: false,
       message: error.message || "Có lỗi xảy ra khi tính tổng tiền"
+    });
+  }
+});
+
+// API để lấy thông tin cập nhật sau khi thay đổi
+router.get("/refresh-data", requireAuth, requireCustomer, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const cartData = await CartModel.calculateTotal(userId);
+    
+    res.json({
+      success: true,
+      ...cartData
+    });
+  } catch (error) {
+    console.error("Refresh cart data error:", error);
+    res.json({
+      success: false,
+      message: "Có lỗi xảy ra"
+    });
+  }
+});
+
+// API để validate và tính toán phía server
+router.post("/validate-selection", requireAuth, requireCustomer, async (req, res) => {
+  try {
+    const { selected_products } = req.body;
+    const userId = req.session.user.id;
+
+    // Validate input
+    if (!selected_products || !Array.isArray(selected_products)) {
+      return res.json({
+        success: false,
+        message: "Danh sách sản phẩm không hợp lệ"
+      });
+    }
+
+    // Server-side validation
+    const validProductIds = selected_products.filter(id => 
+      Number.isInteger(Number(id)) && Number(id) > 0
+    );
+
+    const result = await CartModel.calculateSelectedTotal(userId, validProductIds);
+
+    res.json({
+      success: true,
+      ...result
+    });
+
+  } catch (error) {
+    console.error("Validate selection error:", error);
+    res.json({
+      success: false,
+      message: error.message
     });
   }
 });

@@ -157,8 +157,13 @@ app.use(getWishlistCount);
 // DEBUG MIDDLEWARE - XÓA SAU KHI FIX
 // ======================
 app.use((req, res, next) => {
-  console.log('🔍 DEBUG MIDDLEWARE - res.locals.user:', res.locals.user);
-  next();
+   // Tạo CSRF token cho mỗi request
+    res.locals.csrfToken = Math.random().toString(36).substring(2, 15) + 
+                          Math.random().toString(36).substring(2, 15);
+    
+    console.log('🔍 DEBUG MIDDLEWARE - res.locals.user:', res.locals.user);
+    console.log('🛡️ CSRF Token generated:', res.locals.csrfToken);
+    next();
 });
 
 // ======================
