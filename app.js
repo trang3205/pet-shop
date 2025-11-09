@@ -27,6 +27,16 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Register Handlebars helpers
+const hbs = engine({
+    helpers: {
+        section: hbs_sections(),
+        eq: function (v1, v2) {
+            return v1 === v2;
+        }
+    }
+});
+
 // ======================
 // SESSION CONFIGURATION
 // ======================

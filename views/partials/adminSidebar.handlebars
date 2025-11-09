@@ -1,0 +1,43 @@
+<!-- Admin Sidebar Partial -->
+<nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+    <div class="position-sticky pt-3">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link {{#if (eq active 'dashboard')}}active{{/if}}" href="/admin/dashboard">
+                    <i class="bi bi-house-door"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{#if (eq active 'customers')}}active{{/if}}" href="/admin/customers">
+                    <i class="bi bi-people"></i>
+                    <span>Customers</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{#if (eq active 'managers')}}active{{/if}}" href="/admin/managers">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Managers</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{#if (eq active 'products')}}active{{/if}}" href="/admin/products">
+                    <i class="bi bi-box"></i>
+                    <span>Products</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{#if (eq active 'customer-locks')}}active{{/if}}" href="/admin/customer-locks">
+                    <i class="bi bi-lock"></i>
+                    <span>Customer Locks</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{#if (eq active 'manager-locks')}}active{{/if}}" href="/admin/manager-locks">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Manager Locks</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
