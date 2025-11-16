@@ -142,7 +142,14 @@
 
 <script>
     function getCSRFToken() {
-        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        // ✅ SỬA LẠI: Lấy từ meta tag hoặc hidden field
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag) return metaTag.getAttribute('content');
+        
+        const hiddenField = document.querySelector('input[name="_csrf"]');
+        if (hiddenField) return hiddenField.value;
+        
+        return '';
     }
     document.addEventListener('DOMContentLoaded', function () {
         console.log('🛒 CART PAGE WITH SELECTION LOADED');
@@ -261,9 +268,10 @@
         if (checkoutBtn) {
             checkoutBtn.addEventListener('click', function () {
                 if (selectedProducts.length > 0) {
-                    sessionStorage.setItem('selectedCartItems', JSON.stringify(selectedProducts));
-                    window.location.href = '/checkout?selected=' + selectedProducts.join(',');
-                }
+            // ✅ SỬA: Dùng URL parameters thay vì sessionStorage
+                const selectedParams = selectedProducts.join(',');
+                window.location.href = '/checkout?selected=' + encodeURIComponent(selectedParams);
+        }
             });
         }
 

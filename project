@@ -6,7 +6,7 @@ D:.
 �   app.js
 �   package-lock.json
 �   package.json
-�   project_structure
+�   project
 �   README.md
 �   SETUP.md
 �   test-db.js
@@ -29,6 +29,7 @@ D:.
 �       account.route.js
 �       cart.route.js
 �       category.route.js
+�       checkout.route.js
 �       home.route.js
 �       order.route.js
 �       product.route.js
@@ -77,6 +78,13 @@ D:.
     �       register.handlebars
     �       reset-password.handlebars
     �       verify-otp.handlebars
+    �       
+    +---vwCart
+    �       index.handlebars
+    �       
+    +---vwCheckout
+    �       confirmation.handlebars
+    �       index.handlebars
     �       
     +---vwProduct
     �       detail.handlebars

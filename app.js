@@ -13,6 +13,7 @@ import accountRoute from './routes/account.route.js';
 import categoryRouter from './routes/category.route.js';
 import wishlistRouter from './routes/wishlist.route.js';
 import cartRouter from './routes/cart.route.js';
+import checkoutRouter from './routes/checkout.route.js';
 // Middlewares
 import {
   authenticateUser,
@@ -179,6 +180,7 @@ app.use('/products', productRouter);
 app.use('/account', accountRoute);
 app.use('/user', wishlistRouter);
 app.use('/cart', cartRouter);
+app.use('/checkout', checkoutRouter);
 // ======================
 // 404 ERROR HANDLER
 // ======================

@@ -204,35 +204,66 @@ export default {
     },
 
     // Tính tổng tiền cho các sản phẩm được chọn
-    async calculateSelectedTotal(userId, selectedProductIds = []) {
-        try {
-            const items = await this.findByUserId(userId);
+    // 📄 models/cart.model.js - SỬA PHẦN calculateSelectedTotal
+async calculateSelectedTotal(userId, selectedProductIds = []) {
+    try {
+        console.log('💰 CALCULATE SELECTED TOTAL DEBUG:');
+        console.log('   - User ID:', userId);
+        console.log('   - Selected IDs:', selectedProductIds);
+        console.log('   - Selected IDs type:', typeof selectedProductIds[0]);
 
-            let subtotal = 0;
-            let totalItems = 0;
-            const selectedItems = [];
+        const items = await this.findByUserId(userId);
+        console.log('   - All cart items:', items.map(item => ({
+            product_id: item.product_id,
+            product_id_type: typeof item.product_id,
+            name: item.name,
+            quantity: item.quantity
+        })));
 
-            items.forEach(item => {
-                if (selectedProductIds.includes(item.product_id.toString())) {
-                    const price = item.discount_price || item.price;
-                    subtotal += price * item.quantity;
-                    totalItems += item.quantity;
-                    selectedItems.push(item);
-                }
-            });
+        let subtotal = 0;
+        let totalItems = 0;
+        const selectedItems = [];
 
-            console.log('💰 SELECTED CART TOTAL - Subtotal:', subtotal, 'Items:', totalItems);
+        // ✅ SỬA: Convert cả 2 về number để so sánh
+        const selectedIdsAsNumbers = selectedProductIds.map(id => 
+            typeof id === 'string' ? parseInt(id) : id
+        );
 
-            return {
-                subtotal,
-                totalItems,
-                items: selectedItems,
-                allItems: items // Giữ lại tất cả items để hiển thị
-            };
-        } catch (error) {
-            console.error("❌ Calculate selected cart total error:", error);
-            return { subtotal: 0, totalItems: 0, items: [], allItems: [] };
-        }
+        items.forEach(item => {
+            // ✅ SỬA: So sánh number với number
+            if (selectedIdsAsNumbers.includes(item.product_id)) {
+                const price = item.discount_price || item.price;
+                subtotal += price * item.quantity;
+                totalItems += item.quantity;
+                selectedItems.push(item);
+                
+                console.log(`   ✅ INCLUDED: Product ${item.product_id} - ${item.name}`);
+            } else {
+                console.log(`   ❌ EXCLUDED: Product ${item.product_id} - ${item.name}`);
+            }
+        });
+
+        console.log('💰 SELECTED CART TOTAL RESULT:', {
+            selected_count: selectedItems.length,
+            subtotal: subtotal,
+            totalItems: totalItems,
+            selected_items: selectedItems.map(item => ({
+                id: item.product_id,
+                name: item.name,
+                quantity: item.quantity
+            }))
+        });
+
+        return {
+            subtotal,
+            totalItems,
+            items: selectedItems,
+            allItems: items
+        };
+    } catch (error) {
+        console.error("❌ Calculate selected cart total error:", error);
+        return { subtotal: 0, totalItems: 0, items: [], allItems: [] };
     }
+}
 
 };
