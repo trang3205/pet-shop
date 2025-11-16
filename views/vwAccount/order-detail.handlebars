@@ -1,0 +1,350 @@
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-person-circle"></i> Tài khoản của tôi</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="/account/profile" class="list-group-item list-group-item-action">
+                        <i class="bi bi-person me-2"></i>Thông tin cá nhân
+                    </a>
+                    <a href="/account/orders" class="list-group-item list-group-item-action">
+                        <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
+                    </a>
+                    <a href="/user/wishlist" class="list-group-item list-group-item-action">
+                        <i class="bi bi-heart me-2"></i>Sản phẩm yêu thích
+                    </a>
+                    <a href="/account/reviews" class="list-group-item list-group-item-action">
+                        <i class="bi bi-star me-2"></i>Đánh giá của tôi
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-receipt me-2"></i>
+                        Đơn hàng #{{order.order_number}}
+                    </h4>
+                    <span class="badge {{order.status_badge_class}} fs-6">
+                        {{order.status_text}}
+                    </span>
+                </div>
+
+                <div class="card-body">
+                    <!-- Order Info -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Thông tin đơn hàng</h6>
+                            <p class="mb-1"><strong>Ngày đặt:</strong> {{order.created_at_formatted}}</p>
+                            <p class="mb-1"><strong>Phương thức thanh toán:</strong>
+                                {{#ifEqual order.payment_method 'cod'}}Thanh toán khi nhận hàng{{/ifEqual}}
+                                {{#ifEqual order.payment_method 'bank_transfer'}}Chuyển khoản ngân hàng{{/ifEqual}}
+                                {{#ifEqual order.payment_method 'vnpay'}}VNPay{{/ifEqual}}
+                            </p>
+                            <p class="mb-1"><strong>Trạng thái thanh toán:</strong>
+                                <span
+                                    class="badge {{#ifEqual order.payment_status 'paid'}}bg-success{{else}}bg-warning{{/ifEqual}}">
+                                    {{#ifEqual order.payment_status 'paid'}}Đã thanh toán{{/ifEqual}}
+                                    {{#ifEqual order.payment_status 'pending'}}Chờ thanh toán{{/ifEqual}}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Địa chỉ nhận hàng</h6>
+                            <p class="mb-1"><strong>{{order.shipping_address.full_name}}</strong></p>
+                            <p class="mb-1">{{order.shipping_address.phone}}</p>
+                            <p class="mb-1 text-muted">
+                                {{order.shipping_address.street_address}},
+                                {{order.shipping_address.ward}},
+                                {{order.shipping_address.district}},
+                                {{order.shipping_address.province}}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Order Items -->
+                    <h6 class="fw-bold border-bottom pb-2">Sản phẩm đã đặt</h6>
+
+                    {{#each orderItems}}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-2">
+                                    <img src="{{this.product_image_url}}" alt="{{this.product_name}}"
+                                        class="img-fluid rounded" style="max-height: 80px;">
+                                </div>
+                                <div class="col-md-4">
+                                    <h6 class="mb-1">{{this.product_name}}</h6>
+                                    <small class="text-muted">SKU: {{this.product_sku}}</small>
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <span class="text-muted">Số lượng: {{this.quantity}}</span>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <span class="fw-bold text-primary">{{formatCurrency this.unit_price}}</span>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <span class="fw-bold">{{formatCurrency this.total_price}}</span>
+                                </div>
+                            </div>
+
+                            <!-- Review Section -->
+                            {{#if this.can_review}}
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <h6 class="mb-3">Đánh giá sản phẩm</h6>
+
+                                <form action="/account/reviews" method="POST" class="review-form"
+                                    data-order-item="{{this.id}}">
+                                    <input type="hidden" name="_csrf" value="{{../csrfToken}}">
+                                    <input type="hidden" name="order_item_id" value="{{this.id}}">
+                                    <input type="hidden" name="product_id" value="{{this.product_id}}">
+                                    <input type="hidden" name="product_name" value="{{this.product_name}}">
+
+                                    <!-- ✅ FIXED: Rating Stars với helper mới -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Chất lượng sản phẩm:</label>
+                                        <div class="rating-stars d-flex gap-2 mt-2">
+                                            <!-- Sử dụng helper starOptions -->
+                                            {{{starOptions this.id}}}
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="comment-{{this.id}}" class="form-label fw-bold">Nhận xét:</label>
+                                        <textarea class="form-control" id="comment-{{this.id}}" name="comment" rows="3"
+                                            placeholder="Hãy chia sẻ cảm nhận của bạn về sản phẩm... (không bắt buộc)"></textarea>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-star-fill me-1"></i> Gửi đánh giá
+                                    </button>
+                                </form>
+                            </div>
+                            {{else if this.has_reviewed}}
+                            <div class="mt-3 p-3 bg-success bg-opacity-10 rounded">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="text-success">
+                                            <i class="bi bi-check-circle-fill me-1"></i>
+                                            Bạn đã đánh giá sản phẩm này
+                                        </span>
+                                        <!-- ✅ Hiển thị rating đã đánh giá -->
+                                        <div class="mt-1">
+                                            {{{displayStars this.review_rating}}}
+                                        </div>
+                                    </div>
+                                    <a href="/account/reviews" class="btn btn-outline-primary btn-sm">
+                                        Xem đánh giá
+                                    </a>
+                                </div>
+                            </div>
+                            {{/if}}
+                        </div>
+                    </div>
+                    {{/each}}
+
+                    <!-- Order Summary -->
+                    <div class="row justify-content-end">
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3">Tổng kết đơn hàng</h6>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Tạm tính:</span>
+                                        <span>{{formatCurrency order.subtotal}}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Phí vận chuyển:</span>
+                                        <span>{{formatCurrency order.shipping_fee}}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Giảm giá:</span>
+                                        <span>{{formatCurrency order.discount_amount}}</span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between fw-bold fs-5">
+                                        <span>Tổng cộng:</span>
+                                        <span class="text-primary">{{formatCurrency order.total_amount}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-4 text-end">
+                        <a href="/account/orders" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Quay lại danh sách
+                        </a>
+                        {{#ifEqual order.order_status 'pending'}}
+                        <button class="btn btn-danger ms-2">
+                            <i class="bi bi-x-circle"></i> Hủy đơn hàng
+                        </button>
+                        {{/ifEqual}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // Xử lý form đánh giá - FIXED VERSION
+    document.addEventListener('DOMContentLoaded', function () {
+        const reviewForms = document.querySelectorAll('.review-form');
+
+        reviewForms.forEach(form => {
+            // Thêm sự kiện click cho star labels
+            const starLabels = form.querySelectorAll('.star-label');
+            starLabels.forEach(label => {
+                label.addEventListener('click', function() {
+                    const radio = this.previousElementSibling;
+                    radio.checked = true;
+                    
+                    // Update visual state
+                    starLabels.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+
+                // Validate rating
+                const rating = this.querySelector('input[name="rating"]:checked');
+                if (!rating) {
+                    alert('Vui lòng chọn số sao đánh giá!');
+                    return;
+                }
+
+                // Disable button
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang gửi...';
+
+                try {
+                    // ✅ FIX: Sử dụng URLSearchParams thay vì FormData
+                    const formData = new URLSearchParams();
+                    
+                    // Thêm tất cả form fields
+                    formData.append('order_item_id', this.querySelector('input[name="order_item_id"]').value);
+                    formData.append('product_id', this.querySelector('input[name="product_id"]').value);
+                    formData.append('product_name', this.querySelector('input[name="product_name"]').value);
+                    formData.append('rating', rating.value);
+                    formData.append('comment', this.querySelector('textarea[name="comment"]').value);
+                    formData.append('_csrf', this.querySelector('input[name="_csrf"]').value);
+
+                    console.log('📤 FORM DATA BEING SENT:');
+                    for (let [key, value] of formData.entries()) {
+                        console.log(`  ${key}: ${value}`);
+                    }
+
+                    const response = await fetch('/account/reviews', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    console.log('📦 REVIEW SUBMISSION RESULT:', result);
+
+                    if (result.success) {
+                        showAlert(result.message, 'success');
+                        // Reload trang sau 1.5 giây
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        showAlert('Lỗi: ' + result.message, 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    }
+                } catch (error) {
+                    console.error('❌ Error submitting review:', error);
+                    showAlert('Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            });
+        });
+    });
+
+    // Helper function để hiển thị alert
+    function showAlert(message, type) {
+        // Xóa alert cũ nếu có
+        const oldAlert = document.querySelector('.custom-alert');
+        if (oldAlert) oldAlert.remove();
+
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} custom-alert alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        // Tự động xóa sau 5 giây
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+</script>
+<style>
+    /* ✅ FIXED STAR STYLING */
+    .star-option .form-check-input {
+        display: none;
+    }
+    
+    .star-label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 16px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+        min-width: 80px;
+        justify-content: center;
+    }
+    
+    .star-label:hover {
+        border-color: #ffc107;
+        background-color: #fff9e6;
+    }
+    
+    .star-option .form-check-input:checked + .star-label {
+        border-color: #ffc107;
+        background-color: #fff3cd;
+        font-weight: bold;
+        color: #ffc107;
+    }
+    
+    /* Đảm bảo icon hiển thị */
+    .bi-star-fill {
+        color: #ffc107 !important;
+        font-size: 16px !important;
+        display: inline-block !important;
+        visibility: visible !important;
+    }
+    
+    .review-form {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+    }
+</style>

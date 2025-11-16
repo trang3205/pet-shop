@@ -114,8 +114,12 @@ router.post("/process", requireAuth, requireCustomer, async (req, res) => {
             payment_method,
             notes,
             agree_terms,
-            selected_products
+            selected_products,
+            shipping_method = 'Giao hàng tiêu chuẩn' // ✅ THÊM SHIPPING METHOD
         } = req.body;
+
+        // ✅ TÍNH SHIPPING FEE THEO PHƯƠNG THỨC
+        const shippingFee = shipping_method === 'Giao hàng nhanh' ? 50000 : 30000;
 
         // ✅ THÊM VALIDATION CHO SELECTED_PRODUCTS
         if (!selected_products) {
@@ -226,8 +230,9 @@ router.post("/process", requireAuth, requireCustomer, async (req, res) => {
             payment_method,
             items: cartData.items,
             subtotal: cartData.subtotal,
-            shipping_fee: 30000,
-            total_amount: cartData.subtotal + 30000,
+            shipping_fee: shippingFee, // ✅ DÙNG SHIPPING FEE TÍNH TOÁN
+            shipping_method: shipping_method, // ✅ THÊM SHIPPING METHOD
+            total_amount: cartData.subtotal + shippingFee,
             notes: notes || ''
         };
 

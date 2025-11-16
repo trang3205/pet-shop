@@ -1,0 +1,130 @@
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-person-circle"></i> Tài khoản của tôi</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="/account/profile" class="list-group-item list-group-item-action">
+                        <i class="bi bi-person me-2"></i>Thông tin cá nhân
+                    </a>
+                    <a href="/account/orders" class="list-group-item list-group-item-action">
+                        <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
+                    </a>
+                    <a href="/user/wishlist" class="list-group-item list-group-item-action">
+                        <i class="bi bi-heart me-2"></i>Sản phẩm yêu thích
+                    </a>
+                    <a href="/account/reviews" class="list-group-item list-group-item-action active">
+                        <i class="bi bi-star me-2"></i>Đánh giá của tôi
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-star me-2"></i>Đánh giá của tôi</h4>
+                </div>
+                <div class="card-body">
+                    {{#if reviews.length}}
+                    <div class="row">
+                        {{#each reviews}}
+                        <div class="col-12 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-2 text-center">
+                                            <img src="{{this.product_image}}" alt="{{this.product_name}}"
+                                                class="img-fluid rounded mb-2" style="max-height: 100px;">
+                                            <a href="/products/{{this.product_slug}}"
+                                                class="btn btn-sm btn-outline-primary mt-2">
+                                                Xem sản phẩm
+                                            </a>
+                                        </div>
+                                        <div class="col-md-10">
+                                            <h6 class="fw-bold">{{this.product_name}}</h6>
+
+                                            <div class="mb-2">
+                                                {{{displayStars this.rating}}}
+                                                <span class="ms-2 text-muted">{{this.rating}}/5</span>
+                                            </div>
+
+                                            <!-- Review Content -->
+                                            {{#if this.comment}}
+                                            <div class="mb-2">
+                                                <p class="mb-1">{{this.comment}}</p>
+                                            </div>
+                                            {{/if}}
+
+                                            <!-- Review Images -->
+                                            {{#if this.image_urls}}
+                                            <div class="mb-2">
+                                                <div class="d-flex gap-2">
+                                                    {{#each this.image_urls}}
+                                                    <img src="{{this}}" alt="Review image" class="img-thumbnail"
+                                                        style="width: 80px; height: 80px; object-fit: cover;">
+                                                    {{/each}}
+                                                </div>
+                                            </div>
+                                            {{/if}}
+
+                                            <!-- Review Meta -->
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">
+                                                    Đánh giá ngày {{formatDate this.created_at}}
+                                                    {{#if this.is_verified_purchase}}
+                                                    <span class="badge bg-success ms-2">
+                                                        <i class="bi bi-patch-check-fill"></i> Đã mua hàng
+                                                    </span>
+                                                    {{/if}}
+                                                </small>
+
+                                                <div class="d-flex gap-2">
+                                                    <span class="text-muted">
+                                                        <i class="bi bi-hand-thumbs-up"></i>
+                                                        {{this.helpful_count}} hữu ích
+                                                    </span>
+                                                    <button class="btn btn-sm btn-outline-danger">
+                                                        <i class="bi bi-trash"></i> Xóa
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {{/each}}
+                    </div>
+                    {{else}}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="bi bi-star display-1 text-muted"></i>
+                        </div>
+                        <h5 class="text-muted">Chưa có đánh giá nào</h5>
+                        <p class="text-muted">Hãy mua sắm và chia sẻ cảm nhận về sản phẩm bạn đã sử dụng!</p>
+                        <a href="/categories" class="btn btn-primary">
+                            <i class="bi bi-cart-plus"></i> Mua sắm ngay
+                        </a>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: 1px solid #e9ecef;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .img-thumbnail {
+        border-radius: 8px;
+    }
+</style>

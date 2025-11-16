@@ -1,5 +1,6 @@
 // middlewares/auth.js
-
+import CartModel from '../models/cart.model.js';
+import db from '../utils/db.js';
 // Middleware xác thực người dùng (cho tất cả routes)
 export function authenticateUser(req, res, next) {
   console.log('🔍 AUTHENTICATE MIDDLEWARE - Session exists:', !!req.session);
@@ -21,16 +22,16 @@ export function authenticateUser(req, res, next) {
 export async function getCartCount(req, res, next) {
   try {
     if (req.session && req.session.user) {
-      const CartModel = await import('../models/cart.model.js');
-      const count = await CartModel.default.getItemsCount(req.session.user.id);
+      // ✅ FIX: Dùng import trực tiếp
+      const count = await CartModel.getItemsCount(req.session.user.id);
       res.locals.cartItemsCount = count;
-      console.log('CART COUNT:', res.locals.cartItemsCount);
+      console.log('🛒 CART COUNT:', res.locals.cartItemsCount);
     } else {
       res.locals.cartItemsCount = 0;
-      console.log('NO CART - User not logged in');
+      console.log('🛒 NO CART - User not logged in');
     }
   } catch (error) {
-    console.error('Error getting cart count:', error);
+    console.error('❌ Error getting cart count:', error);
     res.locals.cartItemsCount = 0;
   }
   next();
@@ -114,19 +115,19 @@ export async function getCategories(req, res, next) {
 export const getWishlistCount = async (req, res, next) => {
   try {
     if (req.session && req.session.user) {
-      const db = await import('../utils/db.js');
-      const wishlistCount = await db.default("wishlists")
+      // ✅ FIX: Dùng import trực tiếp
+      const wishlistCount = await db("wishlists")
         .where("user_id", req.session.user.id)
         .count('* as count')
         .first();
       
       res.locals.wishlistCount = parseInt(wishlistCount.count, 10) || 0;
-      console.log(' WISHLIST COUNT:', res.locals.wishlistCount);
+      console.log('💖 WISHLIST COUNT:', res.locals.wishlistCount);
     } else {
       res.locals.wishlistCount = 0;
     }
   } catch (error) {
-    console.error("Error getting wishlist count:", error);
+    console.error("❌ Error getting wishlist count:", error);
     res.locals.wishlistCount = 0;
   }
   next();

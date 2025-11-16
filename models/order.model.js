@@ -3,57 +3,63 @@ import db from "../utils/db.js";
 
 export default {
     // Tạo đơn hàng mới - ĐÃ SỬA SYNTAX
-     async create(orderData) {
-        const trx = await db.transaction(); // ✅ SỬA LẠI CÁCH TẠO TRANSACTION
-        
-        try {
-            const {
+    async create(orderData) {
+    const trx = await db.transaction();
+    
+    try {
+        const {
+            user_id,
+            customer_name,
+            customer_email,
+            customer_phone,
+            shipping_address,
+            payment_method,
+            items,
+            subtotal,
+            shipping_fee = 30000,
+            shipping_method = 'Giao hàng tiêu chuẩn', // ✅ THÊM SHIPPING METHOD
+            total_amount,
+            notes = ''
+        } = orderData;
+
+        console.log('🛒 CREATING ORDER:', { 
+            user_id, 
+            customer_name, 
+            total_amount,
+            items_count: items.length 
+        });
+
+        // Tạo order number
+        const orderNumber = 'PS' + Date.now().toString().slice(-8);
+        console.log('📋 Order number:', orderNumber);
+
+        // ✅ FIX: THÊM billing_address (default = shipping_address)
+        const billing_address = shipping_address;
+
+         // 1. Tạo order
+        const [newOrder] = await trx('orders')
+            .insert({
+                order_number: orderNumber,
                 user_id,
-                customer_name,
                 customer_email,
+                customer_name,
                 customer_phone,
-                shipping_address,
-                payment_method,
-                items,
+                shipping_address: JSON.stringify(shipping_address),
+                billing_address: JSON.stringify(billing_address),
                 subtotal,
-                shipping_fee = 30000,
+                shipping_fee,
+                shipping_method: shipping_method, // ✅ THÊM VÀO DATABASE
+                tax_amount: 0,
+                discount_amount: 0,
                 total_amount,
-                notes = ''
-            } = orderData;
-
-            console.log('🛒 CREATING ORDER:', { 
-                user_id, 
-                customer_name, 
-                total_amount,
-                items_count: items.length 
-            });
-
-            // Tạo order number
-            const orderNumber = 'PS' + Date.now().toString().slice(-8);
-            console.log('📋 Order number:', orderNumber);
-
-            // 1. Tạo order
-            const [newOrder] = await trx('orders')
-                .insert({
-                    order_number: orderNumber,
-                    user_id,
-                    customer_email,
-                    customer_name,
-                    customer_phone,
-                    shipping_address: JSON.stringify(shipping_address),
-                    subtotal,
-                    shipping_fee,
-                    tax_amount: 0,
-                    discount_amount: 0,
-                    total_amount,
-                    payment_method,
-                    payment_status: 'pending',
-                    order_status: 'pending',
-                    notes,
-                    created_at: db.fn.now(),
-                    updated_at: db.fn.now()
-                })
-                .returning('*');
+                payment_method,
+                payment_status: 'pending',
+                order_status: 'pending',
+                notes,
+                created_at: db.fn.now(),
+                updated_at: db.fn.now()
+            })
+            .returning('*');
 
             console.log('✅ ORDER CREATED WITH ID:', newOrder.id);
 

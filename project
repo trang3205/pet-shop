@@ -24,7 +24,6 @@ D:.
 �       
 +---node_modules
 
-�           
 +---routes
 �       account.route.js
 �       cart.route.js
@@ -52,12 +51,15 @@ D:.
 �       �       toys.jpg
 �       �       
 �       +---products
-�               leather-collar.webp
-�               pedigree-adult.webp
-�               royal-canin-mini.webp
-�               royal-canin-persian.webp
-�               rubber-ball.webp
-�               whiskas-ocean.jpeg
+�       �       leather-collar.webp
+�       �       pedigree-adult.webp
+�       �       royal-canin-mini.webp
+�       �       royal-canin-persian.webp
+�       �       rubber-ball.webp
+�       �       whiskas-ocean.jpeg
+�       �       
+�       +---users
+�               default-avatar.jpg
 �               
 +---utils
 �       db.js
@@ -74,9 +76,12 @@ D:.
     +---vwAccount
     �       forgot-password.handlebars
     �       login.handlebars
+    �       order-detail.handlebars
+    �       orders.handlebars
     �       profile.handlebars
     �       register.handlebars
     �       reset-password.handlebars
+    �       reviews.handlebars
     �       verify-otp.handlebars
     �       
     +---vwCart

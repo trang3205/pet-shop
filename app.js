@@ -134,6 +134,63 @@ app.engine(
       multiply: function (a, b) {
         return a * b;
       },
+
+      // ✅ THÊM 2 HELPER MỚI CHO ORDER STATUS
+      getStatusBadgeClass: function(status) {
+        const statusClasses = {
+          'pending': 'bg-secondary',
+          'confirmed': 'bg-info',
+          'processing': 'bg-primary',
+          'shipping': 'bg-warning',
+          'delivered': 'bg-success',
+          'completed': 'bg-success',
+          'cancelled': 'bg-danger'
+        };
+        return statusClasses[status] || 'bg-secondary';
+      },
+      
+      getStatusText: function(status) {
+        const statusTexts = {
+          'pending': 'Chờ xác nhận',
+          'confirmed': 'Đã xác nhận',
+          'processing': 'Đang xử lý',
+          'shipping': 'Đang giao hàng',
+          'delivered': 'Đã giao hàng',
+          'completed': 'Hoàn thành',
+          'cancelled': 'Đã hủy'
+        };
+        return statusTexts[status] || status;
+      },
+
+      // ✅ THÊM HELPER ĐƠN GIẢN CHO STAR DISPLAY
+        displayStars: function(rating) {
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= rating) {
+                    stars += '<i class="bi bi-star-fill text-warning me-1"></i>';
+                } else {
+                    stars += '<i class="bi bi-star text-warning me-1"></i>';
+                }
+            }
+            return stars;
+        },
+        
+        // ✅ HELPER CHO RADIO BUTTON STARS
+        starOptions: function(orderItemId) {
+            let options = '';
+            for (let i = 1; i <= 5; i++) {
+                options += `
+                <div class="form-check form-check-inline star-option">
+                    <input class="form-check-input" type="radio" name="rating" 
+                           id="rating-${orderItemId}-${i}" value="${i}" required>
+                    <label class="form-check-label star-label" for="rating-${orderItemId}-${i}">
+                        ${i} <i class="bi bi-star-fill"></i>
+                    </label>
+                </div>
+                `;
+            }
+            return options;
+        }
     },
   })
 );
