@@ -45,38 +45,35 @@
                             <th>Email</th>
                             <th>Role</th>
                             <th>Status</th>
-                            <th>Last Login</th>
+                            <th>Created</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
+                        {{#each managers}}
                         <tr>
-                            <td>1</td>
-                            <td>Admin User</td>
-                            <td>admin@petshop.com</td>
-                            <td><span class="badge bg-primary">Admin</span></td>
-                            <td><span class="badge bg-success">Active</span></td>
-                            <td>2023-11-09 10:30 AM</td>
-                            <td>
-                                <button class="btn btn-sm btn-info me-1"><i class="bi bi-pencil"></i></button>
-                                <button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>Store Manager</td>
-                            <td>manager@petshop.com</td>
+                            <td>{{this.id}}</td>
+                            <td>{{this.name}}</td>
+                            <td>{{this.email}}</td>
                             <td><span class="badge bg-info">Manager</span></td>
-                            <td><span class="badge bg-success">Active</span></td>
-                            <td>2023-11-08 05:45 PM</td>
+                            <td><span class="badge {{#if this.is_locked}}bg-danger{{else}}bg-success{{/if}}">{{#if this.is_locked}}Locked{{else}}Active{{/if}}</span></td>
+                            <td>{{this.created_at}}</td>
                             <td>
-                                <button class="btn btn-sm btn-info me-1"><i class="bi bi-pencil"></i></button>
-                                <button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                                <a href="#" class="btn btn-sm btn-info me-1"><i class="bi bi-pencil"></i></a>
+                                <a href="#" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
                             </td>
                         </tr>
+                        {{/each}}
                     </tbody>
                 </table>
             </div>
+
+            {{#unless managers}}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                No managers found.
+            </div>
+            {{/unless}}
 
             <!-- Pagination -->
             <nav aria-label="Page navigation">

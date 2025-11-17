@@ -54,12 +54,39 @@ router.get('/login', (req, res) => {
 const protectedRoutes = express.Router();
 protectedRoutes.use(requireAdmin);
 
-protectedRoutes.get('/dashboard', (req, res) => {
-    res.render('vwAdmin/dashboard', {
-        layout: 'admin',
-        title: 'Admin Dashboard',
-        active: 'dashboard'
-    });
+protectedRoutes.get('/dashboard', async (req, res) => {
+    try {
+        // Get counts from database
+        const totalCustomers = await db('users').where('role', 'customer').count('id as count').first();
+        const totalManagers = await db('users').where('role', 'manager').count('id as count').first();
+        const totalProducts = await db('products').count('id as count').first();
+        const totalOrders = await db('orders').count('id as count').first();
+
+        res.render('vwAdmin/dashboard', {
+            layout: 'admin',
+            title: 'Admin Dashboard',
+            active: 'dashboard',
+            stats: {
+                totalCustomers: totalCustomers?.count || 0,
+                totalManagers: totalManagers?.count || 0,
+                totalProducts: totalProducts?.count || 0,
+                totalOrders: totalOrders?.count || 0
+            }
+        });
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+        res.render('vwAdmin/dashboard', {
+            layout: 'admin',
+            title: 'Admin Dashboard',
+            active: 'dashboard',
+            stats: {
+                totalCustomers: 0,
+                totalManagers: 0,
+                totalProducts: 0,
+                totalOrders: 0
+            }
+        });
+    }
 });
 
 // Customer Locks
@@ -163,12 +190,34 @@ protectedRoutes.post('/profile/update', upload.single('avatar'), async (req, res
     }
 });
 
-protectedRoutes.get('/customers', (req, res) => {
-    res.render('vwAdmin/customers', {
-        layout: 'admin',
-        title: 'Customer Management',
-        active: 'customers'
-    });
+protectedRoutes.get('/customers', async (req, res) => {
+    try {
+        const customers = await db.select('*').from('users').where('role', 'customer');
+        res.render('vwAdmin/customers', {
+            layout: 'admin',
+            title: 'Customer Management',
+            active: 'customers',
+            customers
+        });
+    } catch (error) {
+        console.error('Error fetching customers:', error);
+        res.status(500).render('404', { title: 'Error', message: 'Could not load customers' });
+    }
+});
+
+protectedRoutes.get('/managers', async (req, res) => {
+    try {
+        const managers = await db.select('*').from('users').where('role', 'manager');
+        res.render('vwAdmin/managers', {
+            layout: 'admin',
+            title: 'Manager Management',
+            active: 'managers',
+            managers
+        });
+    } catch (error) {
+        console.error('Error fetching managers:', error);
+        res.status(500).render('404', { title: 'Error', message: 'Could not load managers' });
+    }
 });
 
 // Shop Settings - read config from file
@@ -234,14 +283,6 @@ protectedRoutes.post('/shop-settings/update', upload.single('logo'), async (req,
     }
 });
 
-protectedRoutes.get('/managers', (req, res) => {
-    res.render('vwAdmin/managers', {
-        layout: 'admin',
-        title: 'Manager Management',
-        active: 'managers'
-    });
-});
-
 protectedRoutes.get('/products', (req, res) => {
     res.render('vwAdmin/products', {
         layout: 'admin',
@@ -251,21 +292,5 @@ protectedRoutes.get('/products', (req, res) => {
 });
 
 router.use('/', protectedRoutes);
-
-router.get('/dashboard', (req, res) => {
-    res.render('vwAdmin/dashboard');
-});
-
-router.get('/customers', (req, res) => {
-    res.render('vwAdmin/customers');
-});
-
-router.get('/managers', (req, res) => {
-    res.render('vwAdmin/managers');
-});
-
-router.get('/products', (req, res) => {
-    res.render('vwAdmin/products');
-});
 
 export default router;

@@ -33,6 +33,9 @@ const hbs = engine({
         section: hbs_sections(),
         eq: function (v1, v2) {
             return v1 === v2;
+        },
+        length: function (arr) {
+            return arr ? arr.length : 0;
         }
     }
 });
