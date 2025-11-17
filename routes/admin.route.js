@@ -1,6 +1,40 @@
 import express from 'express';
 import { requireAdmin } from '../middlewares/auth.js';
 import db from '../utils/db.js';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import bcrypt from 'bcryptjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configure multer for avatar uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, '../static/imgs/profiles'));
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'admin-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = /jpeg|jpg|png|gif/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype);
+        
+        if (mimetype && extname) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Only image files are allowed'));
+        }
+    }
+});
 
 const router = express.Router();
 
@@ -67,6 +101,63 @@ protectedRoutes.post('/manager-locks/toggle/:id', async (req, res) => {
         .update({ is_locked: !user.is_locked });
         
     res.redirect('/admin/manager-locks');
+});
+
+// Admin Profile
+protectedRoutes.get('/profile', async (req, res) => {
+    const adminId = req.session.user.id;
+    const admin = await db.select('*').from('users').where('id', adminId).first();
+    
+    res.render('vwAdmin/profile', {
+        layout: 'admin',
+        title: 'Admin Profile',
+        active: 'profile',
+        admin
+    });
+});
+
+// Update Admin Profile
+protectedRoutes.post('/profile/update', upload.single('avatar'), async (req, res) => {
+    try {
+        const adminId = req.session.user.id;
+        const { name, phone, password } = req.body;
+
+        // Prepare update data
+        const updateData = {
+            name,
+            phone: phone || null
+        };
+
+        // Add avatar if uploaded
+        if (req.file) {
+            updateData.avatar = req.file.filename;
+        }
+
+        // Hash password if provided
+        if (password && password.trim() !== '') {
+            updateData.password = await bcrypt.hash(password, 10);
+        }
+
+        // Update database
+        await db('users')
+            .where('id', adminId)
+            .update(updateData);
+
+        // Update session user info
+        req.session.user.name = name;
+        if (req.file) {
+            req.session.user.avatar = req.file.filename;
+        }
+
+        // Redirect back with success message
+        res.redirect('/admin/profile');
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).render('404', { 
+            title: 'Error',
+            message: 'An error occurred while updating your profile.' 
+        });
+    }
 });
 
 protectedRoutes.get('/customers', (req, res) => {
