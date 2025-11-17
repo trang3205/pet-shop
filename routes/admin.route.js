@@ -5,18 +5,21 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
+import fs from 'fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configure multer for avatar uploads
+// Configure multer for uploads (profiles and shop logo)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../static/imgs/profiles'));
+        // choose folder depending on route usage
+        const dest = path.join(__dirname, '../static/imgs/');
+        cb(null, dest);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'admin-' + uniqueSuffix + path.extname(file.originalname));
+        cb(null, 'upload-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
@@ -166,6 +169,69 @@ protectedRoutes.get('/customers', (req, res) => {
         title: 'Customer Management',
         active: 'customers'
     });
+});
+
+// Shop Settings - read config from file
+protectedRoutes.get('/shop-settings', async (req, res) => {
+    try {
+        const cfgPath = path.join(__dirname, '../config/shop.json');
+        let shop = { name: '', phone: '', address: '', logo: null };
+        try {
+            const raw = await fs.readFile(cfgPath, 'utf8');
+            shop = JSON.parse(raw);
+        } catch (err) {
+            // ignore if file missing
+        }
+
+        res.render('vwAdmin/shop-settings', {
+            layout: 'admin',
+            title: 'Shop Settings',
+            active: 'shop-settings',
+            shop
+        });
+    } catch (error) {
+        console.error('Error loading shop settings:', error);
+        res.status(500).render('404', { title: 'Error', message: 'Could not load shop settings' });
+    }
+});
+
+// Update shop settings
+protectedRoutes.post('/shop-settings/update', upload.single('logo'), async (req, res) => {
+    try {
+        const { name, phone, address } = req.body;
+        const cfgDir = path.join(__dirname, '../config');
+        const cfgPath = path.join(cfgDir, 'shop.json');
+
+        // ensure directories exist
+        await fs.mkdir(path.join(__dirname, '../static/imgs/shop'), { recursive: true });
+        await fs.mkdir(cfgDir, { recursive: true });
+
+        let shop = { name: name || '', phone: phone || '', address: address || '' };
+
+        // if file was uploaded, move it to shop folder
+        if (req.file) {
+            const tmpPath = req.file.path;
+            const destName = 'logo-' + Date.now() + path.extname(req.file.originalname);
+            const destPath = path.join(__dirname, '../static/imgs/shop', destName);
+            await fs.rename(tmpPath, destPath);
+            shop.logo = destName;
+        } else {
+            // preserve existing logo if exists
+            try {
+                const raw = await fs.readFile(cfgPath, 'utf8');
+                const prev = JSON.parse(raw);
+                if (prev && prev.logo) shop.logo = prev.logo;
+            } catch (e) {}
+        }
+
+        await fs.writeFile(cfgPath, JSON.stringify(shop, null, 2), 'utf8');
+
+        // redirect back
+        res.redirect('/admin/shop-settings');
+    } catch (error) {
+        console.error('Error updating shop settings:', error);
+        res.status(500).render('404', { title: 'Error', message: 'Could not update shop settings' });
+    }
 });
 
 protectedRoutes.get('/managers', (req, res) => {

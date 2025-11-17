@@ -1,0 +1,71 @@
+<!-- Shop Settings -->
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        {{> adminSidebar}}
+
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Shop Settings</h1>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <form method="POST" action="/admin/shop-settings/update" enctype="multipart/form-data">
+                                <div class="mb-4 text-center">
+                                    <div style="width:120px; height:120px; margin:0 auto;">
+                                        {{#if shop.logo}}
+                                            <img id="shopLogoPreview" src="/static/imgs/shop/{{shop.logo}}" alt="Shop Logo" style="width:100%; height:100%; object-fit:contain; border-radius:8px;">
+                                        {{else}}
+                                            <div id="shopLogoPreview" style="width:100%; height:100%; background:#f0f0f0; display:flex; align-items:center; justify-content:center; border-radius:8px;">Logo</div>
+                                        {{/if}}
+                                    </div>
+                                    <label for="logoUpload" class="btn btn-sm btn-outline-primary mt-2">Change Logo</label>
+                                    <input id="logoUpload" type="file" name="logo" accept="image/*" class="d-none">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Shop Name</label>
+                                    <input type="text" name="name" class="form-control" value="{{shop.name}}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Phone</label>
+                                    <input type="text" name="phone" class="form-control" value="{{shop.phone}}">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Address</label>
+                                    <input type="text" name="address" class="form-control" value="{{shop.address}}">
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-save"></i> Save Settings
+                                    </button>
+                                    <a href="/admin/dashboard" class="btn btn-secondary">Cancel</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+document.getElementById('logoUpload').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        const img = document.getElementById('shopLogoPreview');
+        img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+});
+</script>
