@@ -48,6 +48,9 @@ const hbs = engine({
         lt: function (a, b) {
             return a < b;
         },
+        lte: function (a, b) {
+            return a <= b;
+        },
         subtract: function (a, b) {
             return a - b;
         },
@@ -170,6 +173,15 @@ app.engine(
       },
       gt: function (a, b) {
         return a > b;
+      },
+      lt: function (a, b) {
+        return a < b;
+      },
+      gte: function (a, b) {
+        return a >= b;
+      },
+      lte: function (a, b) {
+        return a <= b;
       },
 
       getRatingStats: function (rating, stats) {

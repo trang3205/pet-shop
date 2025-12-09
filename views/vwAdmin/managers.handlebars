@@ -20,23 +20,24 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Search managers...">
-                        <button class="btn btn-outline-secondary" type="button">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search by name or email...">
+                        <button class="btn btn-outline-secondary" type="button" id="searchBtn">
                             <i class="bi bi-search"></i>
                         </button>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select">
-                        <option selected>Filter by Role</option>
+                    <select class="form-select" id="roleFilter">
+                        <option value="" selected>Show All</option>
                         <option value="admin">Admin</option>
                         <option value="manager">Manager</option>
                     </select>
                 </div>
             </div>
 
-            <!-- Managers Table -->
-            <div class="table-responsive">
+            <!-- Admins Table -->
+            <h3 class="mt-5 mb-3" id="adminSectionTitle">Administrators</h3>
+            <div class="table-responsive" id="adminTableContainer">
                 <table class="table table-striped table-hover">
                     <thead>
                         <tr>
@@ -49,9 +50,50 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {{#each managers}}
+                    <tbody id="adminTableBody">
+                        {{#each admins}}
+                        <tr class="admin-row" data-name="{{this.name}}" data-email="{{this.email}}" data-role="{{this.role}}">
+                            <td>{{this.id}}</td>
+                            <td>{{this.name}}</td>
+                            <td>{{this.email}}</td>
+                            <td><span class="badge bg-warning">Admin</span></td>
+                            <td><span class="badge {{#if this.is_locked}}bg-danger{{else}}bg-success{{/if}}">{{#if this.is_locked}}Locked{{else}}Active{{/if}}</span></td>
+                            <td>{{this.created_at}}</td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-info me-1" data-bs-toggle="modal" data-bs-target="#editManagerModal" data-id="{{this.id}}" data-name="{{this.name}}" data-email="{{this.email}}" data-phone="{{this.phone}}" data-role="{{this.role}}"><i class="bi bi-pencil"></i></a>
+                                <a href="#" class="btn btn-sm btn-danger" data-id="{{this.id}}"><i class="bi bi-trash"></i></a>
+                            </td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+
+            {{#unless admins}}
+            <div class="alert alert-info" id="adminEmptyMsg">
+                <i class="bi bi-info-circle"></i>
+                No admins found.
+            </div>
+            {{/unless}}
+
+            <!-- Managers Table -->
+            <h3 class="mt-5 mb-3" id="managerSectionTitle">Managers</h3>
+            <div class="table-responsive" id="managerTableContainer">
+                <table class="table table-striped table-hover">
+                    <thead>
                         <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="managerTableBody">
+                        {{#each managers}}
+                        <tr class="manager-row" data-name="{{this.name}}" data-email="{{this.email}}" data-role="{{this.role}}">
                             <td>{{this.id}}</td>
                             <td>{{this.name}}</td>
                             <td>{{this.email}}</td>
@@ -59,7 +101,7 @@
                             <td><span class="badge {{#if this.is_locked}}bg-danger{{else}}bg-success{{/if}}">{{#if this.is_locked}}Locked{{else}}Active{{/if}}</span></td>
                             <td>{{this.created_at}}</td>
                             <td>
-                                <a href="#" class="btn btn-sm btn-info me-1" data-bs-toggle="modal" data-bs-target="#editManagerModal" data-id="{{this.id}}" data-name="{{this.name}}" data-email="{{this.email}}" data-phone="{{this.phone}}"><i class="bi bi-pencil"></i></a>
+                                <a href="#" class="btn btn-sm btn-info me-1" data-bs-toggle="modal" data-bs-target="#editManagerModal" data-id="{{this.id}}" data-name="{{this.name}}" data-email="{{this.email}}" data-phone="{{this.phone}}" data-role="{{this.role}}"><i class="bi bi-pencil"></i></a>
                                 <a href="#" class="btn btn-sm btn-danger" data-id="{{this.id}}"><i class="bi bi-trash"></i></a>
                             </td>
                         </tr>
@@ -69,25 +111,43 @@
             </div>
 
             {{#unless managers}}
-            <div class="alert alert-info">
+            <div class="alert alert-info" id="managerEmptyMsg">
                 <i class="bi bi-info-circle"></i>
                 No managers found.
             </div>
             {{/unless}}
 
             <!-- Pagination -->
-            <nav aria-label="Page navigation">
+            {{#if totalPages}}
+            <nav aria-label="Page navigation" class="mt-4">
                 <ul class="pagination justify-content-center">
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1">Previous</a>
+                    <!-- Previous Button -->
+                    <li class="page-item {{#if (eq currentPage 1)}}disabled{{/if}}">
+                        {{#if (gt currentPage 1)}}
+                            <a class="page-link" href="/admin/managers?page={{subtract currentPage 1}}">Previous</a>
+                        {{else}}
+                            <a class="page-link" href="#" tabindex="-1">Previous</a>
+                        {{/if}}
                     </li>
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">Next</a>
+
+                    <!-- Page Numbers -->
+                    {{#each (arrayRange totalPages)}}
+                        <li class="page-item {{#if (eq this ../currentPage)}}active{{/if}}">
+                            <a class="page-link" href="/admin/managers?page={{this}}">{{this}}</a>
+                        </li>
+                    {{/each}}
+
+                    <!-- Next Button -->
+                    <li class="page-item {{#if (eq currentPage totalPages)}}disabled{{/if}}">
+                        {{#if (lt currentPage totalPages)}}
+                            <a class="page-link" href="/admin/managers?page={{add currentPage 1}}">Next</a>
+                        {{else}}
+                            <a class="page-link" href="#">Next</a>
+                        {{/if}}
                     </li>
                 </ul>
             </nav>
+            {{/if}}
         </main>
     </div>
 </div>
@@ -117,6 +177,14 @@
                     <div class="mb-3">
                         <label for="addPassword" class="form-label">Password</label>
                         <input type="password" class="form-control" id="addPassword" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addRole" class="form-label">Role</label>
+                        <select class="form-select" id="addRole" name="role" required>
+                            <option value="">-- Select Role --</option>
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                        </select>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -154,6 +222,14 @@
                     <div class="mb-3">
                         <label for="editPassword" class="form-label">Password</label>
                         <input type="password" class="form-control" id="editPassword" name="password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editRole" class="form-label">Role</label>
+                        <select class="form-select" id="editRole" name="role" required>
+                            <option value="">-- Select Role --</option>
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                        </select>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -225,14 +301,114 @@
         }
     });
 
+    // Search and Filter Functionality
+    const searchInput = document.getElementById('searchInput');
+    const roleFilter = document.getElementById('roleFilter');
+    const adminRows = document.querySelectorAll('.admin-row');
+    const managerRows = document.querySelectorAll('.manager-row');
+    const adminSectionTitle = document.getElementById('adminSectionTitle');
+    const managerSectionTitle = document.getElementById('managerSectionTitle');
+    const adminTableContainer = document.getElementById('adminTableContainer');
+    const managerTableContainer = document.getElementById('managerTableContainer');
+    const adminEmptyMsg = document.getElementById('adminEmptyMsg');
+    const managerEmptyMsg = document.getElementById('managerEmptyMsg');
+
+    function filterRows() {
+        const searchText = searchInput.value.toLowerCase().trim();
+        const selectedRole = roleFilter.value;
+
+        let adminVisibleCount = 0;
+        let managerVisibleCount = 0;
+
+        // Filter admin rows
+        adminRows.forEach(row => {
+            const name = row.getAttribute('data-name').toLowerCase();
+            const email = row.getAttribute('data-email').toLowerCase();
+
+            // Check if row matches search
+            const matchesSearch = searchText === '' || name.includes(searchText) || email.includes(searchText);
+            
+            // Check if row should be shown based on role filter
+            const shouldShowByRole = selectedRole === '' || selectedRole === 'admin';
+
+            if (matchesSearch && shouldShowByRole) {
+                row.style.display = '';
+                adminVisibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Filter manager rows
+        managerRows.forEach(row => {
+            const name = row.getAttribute('data-name').toLowerCase();
+            const email = row.getAttribute('data-email').toLowerCase();
+
+            // Check if row matches search
+            const matchesSearch = searchText === '' || name.includes(searchText) || email.includes(searchText);
+            
+            // Check if row should be shown based on role filter
+            const shouldShowByRole = selectedRole === '' || selectedRole === 'manager';
+
+            if (matchesSearch && shouldShowByRole) {
+                row.style.display = '';
+                managerVisibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+    // Show/hide sections and empty messages
+        if (selectedRole === '' || selectedRole === 'admin') {
+            adminSectionTitle.style.display = '';
+            adminTableContainer.style.display = '';
+            if (adminEmptyMsg) adminEmptyMsg.style.display = adminVisibleCount === 0 ? '' : 'none';
+        } else {
+            adminSectionTitle.style.display = 'none';
+            adminTableContainer.style.display = 'none';
+            if (adminEmptyMsg) adminEmptyMsg.style.display = 'none';
+        }
+
+        if (selectedRole === '' || selectedRole === 'manager') {
+            managerSectionTitle.style.display = '';
+            managerTableContainer.style.display = '';
+            if (managerEmptyMsg) managerEmptyMsg.style.display = managerVisibleCount === 0 ? '' : 'none';
+        } else {
+            managerSectionTitle.style.display = 'none';
+            managerTableContainer.style.display = 'none';
+            if (managerEmptyMsg) managerEmptyMsg.style.display = 'none';
+        }
+    }
+
+    // Event listeners for search and filter
+    searchInput.addEventListener('input', filterRows);
+    roleFilter.addEventListener('change', filterRows);
+    
+    // Initialize filter on page load with the default value
+    filterRows();
+
     // Delete Manager
     document.querySelectorAll('.btn-danger').forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
-            if (confirm('Are you sure you want to delete this manager?')) {
-                const form = document.getElementById('deleteManagerForm');
-                form.action = `/admin/managers/delete/${this.dataset.id}`;
-                form.submit();
+            if (confirm('Are you sure you want to delete this user?')) {
+                const userId = this.dataset.id;
+                fetch('/admin/managers/delete/' + userId, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('User deleted successfully');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to delete user'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting user');
+                });
             }
         });
     });
@@ -245,6 +421,7 @@
             document.getElementById('editEmail').value = this.dataset.email;
             document.getElementById('editPhone').value = this.dataset.phone || '';
             document.getElementById('editPassword').value = '';
+            document.getElementById('editRole').value = this.dataset.role;
         });
     });
 </script>

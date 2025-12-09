@@ -56,36 +56,25 @@ protectedRoutes.use(requireAdmin);
 
 protectedRoutes.get('/dashboard', async (req, res) => {
     try {
-        // Get counts from database
-        const totalCustomers = await db('users').where('role', 'customer').count('id as count').first();
-        const totalManagers = await db('users').where('role', 'manager').count('id as count').first();
-        const totalProducts = await db('products').count('id as count').first();
-        const totalOrders = await db('orders').count('id as count').first();
+        const totalCustomers = await db('users').where('role', 'customer').count('* as count').first();
+        const totalManagers = await db('users').where('role', 'manager').count('* as count').first();
+        const totalProducts = await db('products').count('* as count').first();
+        const totalOrders = await db('orders').count('* as count').first();
 
         res.render('vwAdmin/dashboard', {
             layout: 'admin',
-            title: 'Admin Dashboard',
+            title: 'Dashboard',
             active: 'dashboard',
             stats: {
-                totalCustomers: totalCustomers?.count || 0,
-                totalManagers: totalManagers?.count || 0,
-                totalProducts: totalProducts?.count || 0,
-                totalOrders: totalOrders?.count || 0
+                totalCustomers: totalCustomers.count,
+                totalManagers: totalManagers.count,
+                totalProducts: totalProducts.count,
+                totalOrders: totalOrders.count
             }
         });
     } catch (error) {
-        console.error('Error loading dashboard stats:', error);
-        res.render('vwAdmin/dashboard', {
-            layout: 'admin',
-            title: 'Admin Dashboard',
-            active: 'dashboard',
-            stats: {
-                totalCustomers: 0,
-                totalManagers: 0,
-                totalProducts: 0,
-                totalOrders: 0
-            }
-        });
+        console.error('Error fetching dashboard data:', error);
+        res.status(500).render('404', { title: 'Error', message: 'Could not load dashboard' });
     }
 });
 
@@ -231,12 +220,35 @@ protectedRoutes.post('/profile/update', upload.single('avatar'), async (req, res
 
 protectedRoutes.get('/customers', async (req, res) => {
     try {
-        const customers = await db.select('*').from('users').where('role', 'customer');
+        const customersPerPage = 10;
+        const page = parseInt(req.query.page) || 1;
+        const searchQuery = req.query.search || '';
+
+        const customerOffset = (page - 1) * customersPerPage;
+
+        let allCustomers = await db.select('*').from('users').where('role', 'customer');
+
+        if (searchQuery) {
+            allCustomers = allCustomers.filter(customer => 
+                customer.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                customer.email.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+
+        const totalCustomers = allCustomers.length;
+        const totalPages = Math.ceil(totalCustomers / customersPerPage);
+
+        const customers = allCustomers.slice(customerOffset, customerOffset + customersPerPage);
+
         res.render('vwAdmin/customers', {
             layout: 'admin',
-            title: 'Customer Management',
+            title: 'Customers Management',
             active: 'customers',
-            customers
+            customers,
+            currentPage: page,
+            totalPages,
+            totalCustomers,
+            searchQuery
         });
     } catch (error) {
         console.error('Error fetching customers:', error);
@@ -246,12 +258,34 @@ protectedRoutes.get('/customers', async (req, res) => {
 
 protectedRoutes.get('/managers', async (req, res) => {
     try {
-        const managers = await db.select('*').from('users').where('role', 'manager');
+        const adminsPerPage = 3;
+        const managersPerPage = 3;
+        const page = parseInt(req.query.page) || 1;
+
+        const adminOffset = (page - 1) * adminsPerPage;
+        const managerOffset = (page - 1) * managersPerPage;
+
+        const allAdmins = await db.select('*').from('users').where('role', 'admin');
+        const allManagers = await db.select('*').from('users').where('role', 'manager');
+
+        const totalAdmins = allAdmins.length;
+        const totalManagers = allManagers.length;
+
+        const totalPages = Math.ceil(Math.max(totalAdmins / adminsPerPage, totalManagers / managersPerPage));
+
+        const admins = allAdmins.slice(adminOffset, adminOffset + adminsPerPage);
+        const managers = allManagers.slice(managerOffset, managerOffset + managersPerPage);
+
         res.render('vwAdmin/managers', {
             layout: 'admin',
             title: 'Manager Management',
             active: 'managers',
-            managers
+            admins,
+            managers,
+            currentPage: page,
+            totalPages,
+            totalAdmins,
+            totalManagers
         });
     } catch (error) {
         console.error('Error fetching managers:', error);
@@ -542,10 +576,15 @@ protectedRoutes.post('/customers/delete/:id', async (req, res) => {
 protectedRoutes.post('/managers/add', async (req, res) => {
     try {
         console.log('🔧 Add Manager Request Body:', req.body);
-        const { name, email, phone, password } = req.body;
+        const { name, email, phone, password, role } = req.body;
         
-        if (!name || !email || !password) {
+        if (!name || !email || !password || !role) {
             return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        // Validate role
+        if (!['admin', 'manager'].includes(role)) {
+            return res.status(400).json({ message: 'Invalid role selected' });
         }
         
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -555,7 +594,7 @@ protectedRoutes.post('/managers/add', async (req, res) => {
             email,
             phone,
             password: hashedPassword,
-            role: 'manager',
+            role: role,
             created_at: new Date()
         };
 
@@ -572,11 +611,16 @@ protectedRoutes.post('/managers/add', async (req, res) => {
 protectedRoutes.post('/managers/edit/:id', async (req, res) => {
     try {
         console.log('🔧 Edit Manager Request Body:', req.body);
-        const { name, email, phone, password } = req.body;
+        const { name, email, phone, password, role } = req.body;
         const managerId = req.params.id;
 
         if (!name || !email) {
             return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        // Validate role if provided
+        if (role && !['admin', 'manager'].includes(role)) {
+            return res.status(400).json({ message: 'Invalid role selected' });
         }
 
         const updateData = {
@@ -584,6 +628,10 @@ protectedRoutes.post('/managers/edit/:id', async (req, res) => {
             email,
             phone
         };
+
+        if (role) {
+            updateData.role = role;
+        }
 
         if (password && password.trim() !== '') {
             updateData.password = await bcrypt.hash(password, 10);
@@ -610,10 +658,10 @@ protectedRoutes.post('/managers/delete/:id', async (req, res) => {
             .where('id', managerId)
             .del();
 
-        res.redirect('/admin/managers');
+        res.json({ success: true, message: 'Manager deleted successfully' });
     } catch (error) {
         console.error('Error deleting manager:', error);
-        res.status(500).render('404', { title: 'Error', message: 'Could not delete manager' });
+        res.status(500).json({ success: false, message: 'Could not delete manager' });
     }
 });
 
