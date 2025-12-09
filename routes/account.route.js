@@ -88,6 +88,13 @@ router.post('/login', async (req, res) => {
     }
 
     try {
+        // Check if user exists and account is not locked
+        const userRecord = await User.findByEmail(email);
+        
+        if (userRecord && userRecord.is_locked) {
+            return res.render('vwAccount/login', { error: 'Tài khoản này đã bị khóa. Vui lòng liên hệ quản trị viên.' });
+        }
+
         const user = await User.authenticate(email, password);
         if (!user) {
             return res.render('vwAccount/login', { error: 'Email hoặc mật khẩu không đúng.' });

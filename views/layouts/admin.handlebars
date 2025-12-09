@@ -197,6 +197,20 @@
             background-color: #ddd;
             margin: 0.5rem 0;
         }
+
+        .sidebar h6 {
+            margin-bottom: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .nav-item.border-top {
+            border-color: #dee2e6 !important;
+        }
+
+        .sidebar .nav-item i {
+            min-width: 20px;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -247,7 +261,7 @@
         <div class="row">
             <!-- Sidebar -->
             <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-                <div class="position-sticky pt-3">
+                <div class="sidebar-sticky pt-3">
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link {{#if (eq active 'dashboard')}}active{{/if}}" href="/admin/dashboard">
@@ -271,6 +285,18 @@
                             <a class="nav-link {{#if (eq active 'products')}}active{{/if}}" href="/admin/products">
                                 <i class="bi bi-box"></i>
                                 Products
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{#if (eq active 'shop-settings')}}active{{/if}}" href="/admin/shop-settings">
+                                <i class="bi bi-gear"></i>
+                                Shop Settings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{#if (eq active 'contacts')}}active{{/if}}" href="/admin/contacts">
+                                <i class="bi bi-envelope"></i>
+                                Contact
                             </a>
                         </li>
                     </ul>

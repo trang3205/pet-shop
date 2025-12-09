@@ -12,21 +12,17 @@
 
             <div class="row">
                 <div class="col-md-8">
+                    <div id="successAlert" class="alert alert-success alert-dismissible fade d-none" role="alert">
+                        <i class="bi bi-check-circle"></i> Shop settings updated successfully!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <div id="errorAlert" class="alert alert-danger alert-dismissible fade d-none" role="alert">
+                        <i class="bi bi-exclamation-circle"></i> <span id="errorMessage"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
                     <div class="card shadow">
                         <div class="card-body">
-                            <form method="POST" action="/admin/shop-settings/update" enctype="multipart/form-data">
-                                <div class="mb-4 text-center">
-                                    <div style="width:120px; height:120px; margin:0 auto;">
-                                        {{#if shop.logo}}
-                                            <img id="shopLogoPreview" src="/static/imgs/shop/{{shop.logo}}" alt="Shop Logo" style="width:100%; height:100%; object-fit:contain; border-radius:8px;">
-                                        {{else}}
-                                            <div id="shopLogoPreview" style="width:100%; height:100%; background:#f0f0f0; display:flex; align-items:center; justify-content:center; border-radius:8px;">Logo</div>
-                                        {{/if}}
-                                    </div>
-                                    <label for="logoUpload" class="btn btn-sm btn-outline-primary mt-2">Change Logo</label>
-                                    <input id="logoUpload" type="file" name="logo" accept="image/*" class="d-none">
-                                </div>
-
+                            <form id="shopSettingsForm">
                                 <div class="mb-3">
                                     <label class="form-label">Shop Name</label>
                                     <input type="text" name="name" class="form-control" value="{{shop.name}}" required>
@@ -38,8 +34,28 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Address</label>
-                                    <input type="text" name="address" class="form-control" value="{{shop.address}}">
+                                    <label class="form-label">Street Address</label>
+                                    <input type="text" name="street_address" class="form-control" value="{{shop.street_address}}">
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Province</label>
+                                            <input type="text" name="province" class="form-control" value="{{shop.province}}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">District</label>
+                                            <input type="text" name="district" class="form-control" value="{{shop.district}}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Ward</label>
+                                    <input type="text" name="ward" class="form-control" value="{{shop.ward}}">
                                 </div>
 
                                 <div class="d-flex gap-2">
@@ -58,14 +74,37 @@
 </div>
 
 <script>
-document.getElementById('logoUpload').addEventListener('change', function(e){
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-        const img = document.getElementById('shopLogoPreview');
-        img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
+document.getElementById('shopSettingsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(document.getElementById('shopSettingsForm'));
+    const data = Object.fromEntries(formData);
+
+    try {
+        const response = await fetch('/admin/shop-settings/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('successAlert').classList.remove('d-none');
+            setTimeout(() => {
+                document.getElementById('successAlert').classList.add('d-none');
+                window.location.reload();
+            }, 1500);
+        } else {
+            document.getElementById('errorMessage').textContent = result.message;
+            document.getElementById('errorAlert').classList.remove('d-none');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('errorMessage').textContent = 'Failed to update shop settings';
+        document.getElementById('errorAlert').classList.remove('d-none');
+    }
 });
 </script>

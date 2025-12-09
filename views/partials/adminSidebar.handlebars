@@ -44,6 +44,15 @@
                     <span>Shop Settings</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {{#if (eq active 'contacts')}}active{{/if}}" href="/admin/contacts">
+                    <i class="bi bi-envelope"></i>
+                    <span>Contact</span>
+                    {{#if unreadCount}}
+                    <span class="badge bg-danger ms-2">{{unreadCount}}</span>
+                    {{/if}}
+                </a>
+            </li>
         </ul>
     </div>
 </nav>

@@ -24,21 +24,19 @@
                     </thead>
                     <tbody>
                         {{#each managers}}
-                        <tr>
+                        <tr data-manager-id="{{this.id}}" data-manager-name="{{this.name}}" data-is-locked="{{this.is_locked}}">
                             <td>{{this.id}}</td>
                             <td>{{this.name}}</td>
                             <td>{{this.email}}</td>
                             <td class="text-center align-middle">
-                                <span class="badge {{#if this.is_locked}}bg-danger{{else}}bg-success{{/if}} px-3">
+                                <span class="badge status-badge {{#if this.is_locked}}bg-danger{{else}}bg-success{{/if}} px-3">
                                     {{#if this.is_locked}}Locked{{else}}Active{{/if}}
                                 </span>
                             </td>
                             <td class="text-center align-middle">
-                                <form method="POST" action="/admin/manager-locks/toggle/{{this.id}}" class="d-inline">
-                                    <button type="submit" class="badge border-0 {{#if this.is_locked}}bg-success{{else}}bg-danger{{/if}} px-3">
-                                        {{#if this.is_locked}}Unlock{{else}}Lock{{/if}}
-                                    </button>
-                                </form>
+                                <button type="button" class="badge border-0 toggle-lock-btn {{#if this.is_locked}}bg-success{{else}}bg-danger{{/if}} px-3" data-manager-id="{{this.id}}" data-is-locked="{{this.is_locked}}">
+                                    {{#if this.is_locked}}Unlock{{else}}Lock{{/if}}
+                                </button>
                             </td>
                         </tr>
                         {{/each}}
@@ -48,3 +46,40 @@
         </main>
     </div>
 </div>
+
+<script>
+    document.querySelectorAll('.toggle-lock-btn').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const managerId = this.dataset.managerId;
+            const isLocked = this.dataset.isLocked === 'true';
+            const managerName = this.closest('tr').dataset.managerName;
+            const action = isLocked ? 'unlock' : 'lock';
+            
+            const confirmed = confirm(`Are you sure you want to ${action} ${managerName}'s account?`);
+            
+            if (confirmed) {
+                try {
+                    const response = await fetch(`/admin/manager-locks/toggle/${managerId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ action })
+                    });
+                    
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert(result.message);
+                        location.reload();
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred');
+                }
+            }
+        });
+    });
+</script>

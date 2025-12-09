@@ -9,7 +9,7 @@
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">Managers Management</h1>
                 <div class="btn-toolbar mb-2 mb-md-0">
-                    <button type="button" class="btn btn-primary">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addManagerModal">
                         <i class="bi bi-plus"></i>
                         Add New Manager
                     </button>
@@ -59,8 +59,8 @@
                             <td><span class="badge {{#if this.is_locked}}bg-danger{{else}}bg-success{{/if}}">{{#if this.is_locked}}Locked{{else}}Active{{/if}}</span></td>
                             <td>{{this.created_at}}</td>
                             <td>
-                                <a href="#" class="btn btn-sm btn-info me-1"><i class="bi bi-pencil"></i></a>
-                                <a href="#" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
+                                <a href="#" class="btn btn-sm btn-info me-1" data-bs-toggle="modal" data-bs-target="#editManagerModal" data-id="{{this.id}}" data-name="{{this.name}}" data-email="{{this.email}}" data-phone="{{this.phone}}"><i class="bi bi-pencil"></i></a>
+                                <a href="#" class="btn btn-sm btn-danger" data-id="{{this.id}}"><i class="bi bi-trash"></i></a>
                             </td>
                         </tr>
                         {{/each}}
@@ -91,3 +91,160 @@
         </main>
     </div>
 </div>
+
+<!-- Add New Manager Modal -->
+<div class="modal fade" id="addManagerModal" tabindex="-1" aria-labelledby="addManagerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addManagerModalLabel">Add New Manager</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addManagerForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="addName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="addName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="addEmail" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addPhone" class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="addPhone" name="phone">
+                    </div>
+                    <div class="mb-3">
+                        <label for="addPassword" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="addPassword" name="password" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add Manager</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Manager Modal -->
+<div class="modal fade" id="editManagerModal" tabindex="-1" aria-labelledby="editManagerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editManagerModalLabel">Edit Manager</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editManagerForm">
+                <div class="modal-body">
+                    <input type="hidden" id="editManagerId" name="id">
+                    <div class="mb-3">
+                        <label for="editName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="editName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="editEmail" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPhone" class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="editPhone" name="phone">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPassword" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="editPassword" name="password">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Manager Confirmation -->
+<form id="deleteManagerForm" action="/admin/managers/delete/{{this.id}}" method="POST" style="display: none;"></form>
+<script>
+    // Handle Add Manager Form
+    document.getElementById('addManagerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        
+        try {
+            const response = await fetch('/admin/managers/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                location.reload();
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred');
+        }
+    });
+
+    // Handle Edit Manager Form
+    document.getElementById('editManagerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const managerId = document.getElementById('editManagerId').value;
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        
+        try {
+            const response = await fetch(`/admin/managers/edit/${managerId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                location.reload();
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred');
+        }
+    });
+
+    // Delete Manager
+    document.querySelectorAll('.btn-danger').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to delete this manager?')) {
+                const form = document.getElementById('deleteManagerForm');
+                form.action = `/admin/managers/delete/${this.dataset.id}`;
+                form.submit();
+            }
+        });
+    });
+
+    // Populate Edit Manager Modal
+    document.querySelectorAll('[data-bs-target="#editManagerModal"]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.getElementById('editManagerId').value = this.dataset.id;
+            document.getElementById('editName').value = this.dataset.name;
+            document.getElementById('editEmail').value = this.dataset.email;
+            document.getElementById('editPhone').value = this.dataset.phone || '';
+            document.getElementById('editPassword').value = '';
+        });
+    });
+</script>

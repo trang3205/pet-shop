@@ -117,3 +117,36 @@ export async function getCategories(req, res, next) {
   }
   next();
 }
+
+// Middleware lấy shop info từ shop_settings table
+export async function getShopInfo(req, res, next) {
+  try {
+    const db = await import('../utils/db.js');
+    const shopInfo = await db.default('shop_settings').where('id', 1).first();
+    
+    if (shopInfo) {
+      res.locals.shop = shopInfo;
+      console.log('🏪 SHOP INFO LOADED');
+    } else {
+      res.locals.shop = null;
+    }
+  } catch (error) {
+    console.error('Error getting shop info:', error);
+    res.locals.shop = null;
+  }
+  next();
+}
+
+// Middleware lấy số lượng tin nhắn chưa đọc
+export async function getUnreadContactCount(req, res, next) {
+  try {
+    const db = await import('../utils/db.js');
+    const result = await db.default('contacts').where('is_read', false).count('id as count').first();
+    res.locals.unreadCount = result?.count || 0;
+    console.log('📬 UNREAD CONTACTS:', res.locals.unreadCount);
+  } catch (error) {
+    console.error('Error getting unread count:', error);
+    res.locals.unreadCount = 0;
+  }
+  next();
+}

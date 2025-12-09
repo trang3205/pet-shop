@@ -91,46 +91,86 @@ protectedRoutes.get('/dashboard', async (req, res) => {
 
 // Customer Locks
 protectedRoutes.get('/customer-locks', async (req, res) => {
-    const customers = await db.select('*').from('users').where('role', 'customer');
-    res.render('vwAdmin/customer-locks', {
-        layout: 'admin',
-        title: 'Customer Account Locks',
-        active: 'customer-locks',
-        customers
-    });
+    try {
+        const customers = await db.select('*').from('users').where('role', 'customer');
+        res.render('vwAdmin/customer-locks', {
+            layout: 'admin',
+            title: 'Customer Account Locks',
+            active: 'customer-locks',
+            customers
+        });
+    } catch (error) {
+        console.error('Error fetching customers:', error);
+        res.status(500).render('404', { title: 'Error', message: 'Could not load customers' });
+    }
 });
 
 protectedRoutes.post('/customer-locks/toggle/:id', async (req, res) => {
-    const userId = req.params.id;
-    const user = await db.select('is_locked').from('users').where('id', userId).first();
-    
-    await db('users')
-        .where('id', userId)
-        .update({ is_locked: !user.is_locked });
+    try {
+        const userId = req.params.id;
+        const user = await db.select('*').from('users').where('id', userId).first();
         
-    res.redirect('/admin/customer-locks');
+        if (!user) {
+            return res.status(404).json({ message: 'Customer not found' });
+        }
+        
+        // Toggle the locked status
+        const isCurrentlyLocked = user.is_locked || false;
+        const newLockedStatus = !isCurrentlyLocked;
+        
+        await db('users')
+            .where('id', userId)
+            .update({ is_locked: newLockedStatus });
+        
+        const message = newLockedStatus ? 'Customer account locked successfully' : 'Customer account unlocked successfully';
+        console.log('✅', message);
+        res.json({ message });
+    } catch (error) {
+        console.error('❌ Error toggling customer lock:', error.message);
+        res.status(500).json({ message: 'Could not toggle customer lock: ' + error.message });
+    }
 });
 
 // Manager Locks
 protectedRoutes.get('/manager-locks', async (req, res) => {
-    const managers = await db.select('*').from('users').where('role', 'manager');
-    res.render('vwAdmin/manager-locks', {
-        layout: 'admin',
-        title: 'Manager Account Locks',
-        active: 'manager-locks',
-        managers
-    });
+    try {
+        const managers = await db.select('*').from('users').where('role', 'manager');
+        res.render('vwAdmin/manager-locks', {
+            layout: 'admin',
+            title: 'Manager Account Locks',
+            active: 'manager-locks',
+            managers
+        });
+    } catch (error) {
+        console.error('Error fetching managers:', error);
+        res.status(500).render('404', { title: 'Error', message: 'Could not load managers' });
+    }
 });
 
 protectedRoutes.post('/manager-locks/toggle/:id', async (req, res) => {
-    const userId = req.params.id;
-    const user = await db.select('is_locked').from('users').where('id', userId).first();
-    
-    await db('users')
-        .where('id', userId)
-        .update({ is_locked: !user.is_locked });
+    try {
+        const userId = req.params.id;
+        const user = await db.select('*').from('users').where('id', userId).first();
         
-    res.redirect('/admin/manager-locks');
+        if (!user) {
+            return res.status(404).json({ message: 'Manager not found' });
+        }
+        
+        // Toggle the locked status
+        const isCurrentlyLocked = user.is_locked || false;
+        const newLockedStatus = !isCurrentlyLocked;
+        
+        await db('users')
+            .where('id', userId)
+            .update({ is_locked: newLockedStatus });
+        
+        const message = newLockedStatus ? 'Manager account locked successfully' : 'Manager account unlocked successfully';
+        console.log('✅', message);
+        res.json({ message });
+    } catch (error) {
+        console.error('❌ Error toggling manager lock:', error.message);
+        res.status(500).json({ message: 'Could not toggle manager lock: ' + error.message });
+    }
 });
 
 // Admin Profile
@@ -151,6 +191,8 @@ protectedRoutes.post('/profile/update', upload.single('avatar'), async (req, res
     try {
         const adminId = req.session.user.id;
         const { name, phone, password } = req.body;
+
+        console.log('🔧 Update Profile Request:', { name, phone, avatar: req.file?.filename });
 
         // Prepare update data
         const updateData = {
@@ -179,14 +221,11 @@ protectedRoutes.post('/profile/update', upload.single('avatar'), async (req, res
             req.session.user.avatar = req.file.filename;
         }
 
-        // Redirect back with success message
-        res.redirect('/admin/profile');
+        console.log('✅ Profile updated successfully');
+        res.json({ message: 'Profile updated successfully!' });
     } catch (error) {
-        console.error('Error updating profile:', error);
-        res.status(500).render('404', { 
-            title: 'Error',
-            message: 'An error occurred while updating your profile.' 
-        });
+        console.error('❌ Error updating profile:', error.message);
+        res.status(500).json({ message: 'Could not update profile: ' + error.message });
     }
 });
 
@@ -223,13 +262,15 @@ protectedRoutes.get('/managers', async (req, res) => {
 // Shop Settings - read config from file
 protectedRoutes.get('/shop-settings', async (req, res) => {
     try {
-        const cfgPath = path.join(__dirname, '../config/shop.json');
-        let shop = { name: '', phone: '', address: '', logo: null };
+        // Get shop info from shop_settings table
+        let shop = { id: 1, name: 'PetShop', phone: '', street_address: '', province: '', district: '', ward: '' };
         try {
-            const raw = await fs.readFile(cfgPath, 'utf8');
-            shop = JSON.parse(raw);
+            const result = await db('shop_settings').where('id', 1).first();
+            if (result) {
+                shop = result;
+            }
         } catch (err) {
-            // ignore if file missing
+            console.log('Shop settings not found, using defaults');
         }
 
         res.render('vwAdmin/shop-settings', {
@@ -247,48 +288,332 @@ protectedRoutes.get('/shop-settings', async (req, res) => {
 // Update shop settings
 protectedRoutes.post('/shop-settings/update', upload.single('logo'), async (req, res) => {
     try {
-        const { name, phone, address } = req.body;
-        const cfgDir = path.join(__dirname, '../config');
-        const cfgPath = path.join(cfgDir, 'shop.json');
+        const { name, phone, street_address, province, district, ward } = req.body;
 
-        // ensure directories exist
-        await fs.mkdir(path.join(__dirname, '../static/imgs/shop'), { recursive: true });
-        await fs.mkdir(cfgDir, { recursive: true });
+        // Prepare update data
+        const updateData = {
+            name: name || 'PetShop',
+            phone: phone || '',
+            street_address: street_address || '',
+            province: province || '',
+            district: district || '',
+            ward: ward || '',
+            updated_at: new Date()
+        };
 
-        let shop = { name: name || '', phone: phone || '', address: address || '' };
-
-        // if file was uploaded, move it to shop folder
-        if (req.file) {
-            const tmpPath = req.file.path;
-            const destName = 'logo-' + Date.now() + path.extname(req.file.originalname);
-            const destPath = path.join(__dirname, '../static/imgs/shop', destName);
-            await fs.rename(tmpPath, destPath);
-            shop.logo = destName;
+        // Update or insert into shop_settings table (id = 1)
+        const existing = await db('shop_settings').where('id', 1).first();
+        
+        if (existing) {
+            await db('shop_settings').where('id', 1).update(updateData);
         } else {
-            // preserve existing logo if exists
-            try {
-                const raw = await fs.readFile(cfgPath, 'utf8');
-                const prev = JSON.parse(raw);
-                if (prev && prev.logo) shop.logo = prev.logo;
-            } catch (e) {}
+            await db('shop_settings').insert({
+                id: 1,
+                ...updateData,
+                created_at: new Date()
+            });
         }
 
-        await fs.writeFile(cfgPath, JSON.stringify(shop, null, 2), 'utf8');
-
-        // redirect back
-        res.redirect('/admin/shop-settings');
+        res.json({ success: true, message: 'Shop settings updated successfully' });
     } catch (error) {
         console.error('Error updating shop settings:', error);
-        res.status(500).render('404', { title: 'Error', message: 'Could not update shop settings' });
+        res.status(500).json({ success: false, message: 'Could not update shop settings' });
     }
 });
 
-protectedRoutes.get('/products', (req, res) => {
-    res.render('vwAdmin/products', {
-        layout: 'admin',
-        title: 'Product Management',
-        active: 'products'
-    });
+// Contacts - Xem tin nhắn liên hệ
+protectedRoutes.get('/contacts', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = 10;
+        const offset = (page - 1) * pageSize;
+
+        // Get total count
+        const countResult = await db('contacts').count('id as total').first();
+        const totalContacts = countResult?.total || 0;
+        const totalPages = Math.ceil(totalContacts / pageSize);
+
+        // Get unread count
+        const unreadResult = await db('contacts').where('is_read', false).count('id as count').first();
+        const unreadCount = unreadResult?.count || 0;
+
+        // Get contacts with pagination
+        const contacts = await db('contacts')
+            .orderBy('created_at', 'desc')
+            .limit(pageSize)
+            .offset(offset);
+
+        res.render('vwAdmin/contacts', {
+            layout: 'admin',
+            title: 'Contact Messages',
+            active: 'contacts',
+            contacts,
+            currentPage: page,
+            totalPages,
+            totalContacts,
+            unreadCount
+        });
+    } catch (error) {
+        console.error('Error loading contacts:', error);
+        res.render('vwAdmin/contacts', {
+            layout: 'admin',
+            title: 'Contact Messages',
+            active: 'contacts',
+            contacts: [],
+            currentPage: 1,
+            totalPages: 0,
+            totalContacts: 0,
+            error: 'Lỗi khi tải tin nhắn'
+        });
+    }
+});
+
+// Mark contact as read
+protectedRoutes.put('/contacts/:id/read', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        await db('contacts').where('id', id).update({ is_read: true });
+        
+        res.json({ success: true, message: 'Đã đánh dấu đã đọc' });
+    } catch (error) {
+        console.error('Error marking contact as read:', error);
+        res.status(500).json({ success: false, message: 'Lỗi khi đánh dấu đã đọc' });
+    }
+});
+
+// Delete contact message
+protectedRoutes.delete('/contacts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        await db('contacts').where('id', id).delete();
+        
+        res.json({ success: true, message: 'Tin nhắn đã được xóa' });
+    } catch (error) {
+        console.error('Error deleting contact:', error);
+        res.status(500).json({ success: false, message: 'Lỗi khi xóa tin nhắn' });
+    }
+});
+
+protectedRoutes.get('/products', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const search = req.query.search || '';
+        const category = req.query.category || '';
+        const sortBy = req.query.sort || 'name';
+        const pageSize = 4;
+        const offset = (page - 1) * pageSize;
+
+        // Build base query for filtering
+        let baseQuery = db('products');
+
+        // Apply search filter
+        if (search) {
+            baseQuery = baseQuery.where(db.raw(`name ILIKE ?`, [`%${search}%`]));
+        }
+
+        // Apply category filter
+        if (category && category !== '') {
+            baseQuery = baseQuery.where('category_id', category);
+        }
+
+        // Get total count with filters applied
+        const countQuery = baseQuery.clone().count('id as count').first();
+        const totalCountResult = await countQuery;
+        const totalCount = totalCountResult?.count || 0;
+        const totalPages = Math.ceil(totalCount / pageSize);
+
+        // Apply sorting
+        let query = baseQuery.clone();
+        if (sortBy === 'price') {
+            query = query.orderBy('price');
+        } else if (sortBy === 'stock') {
+            query = query.orderBy('stock');
+        } else {
+            query = query.orderBy('name');
+        }
+
+        // Apply pagination
+        const products = await query.offset(offset).limit(pageSize).select('*');
+
+        // Get categories for filter dropdown
+        const categories = await db('categories').select('*');
+
+        res.render('vwAdmin/products', {
+            layout: 'admin',
+            title: 'Product Management',
+            active: 'products',
+            products,
+            categories,
+            currentPage: page,
+            totalPages,
+            search,
+            category,
+            sortBy
+        });
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        res.status(500).render('404', { title: 'Error', message: 'Could not load products' });
+    }
+});
+
+// Add new customer
+protectedRoutes.post('/customers/add', async (req, res) => {
+    try {
+        console.log('🔧 Add Customer Request Body:', req.body);
+        const { name, email, phone, password } = req.body;
+        
+        if (!name || !email || !password) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+        
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newCustomer = {
+            name,
+            email,
+            phone,
+            password: hashedPassword,
+            role: 'customer',
+            created_at: new Date()
+        };
+
+        await db('users').insert(newCustomer);
+        console.log('✅ Customer added successfully:', newCustomer);
+        res.json({ message: 'Customer added successfully!' });
+    } catch (error) {
+        console.error('❌ Error adding customer:', error.message);
+        res.status(500).json({ message: 'Could not add customer: ' + error.message });
+    }
+});
+
+// Edit customer
+protectedRoutes.post('/customers/edit/:id', async (req, res) => {
+    try {
+        console.log('🔧 Edit Customer Request Body:', req.body);
+        const { name, email, phone, password } = req.body;
+        const customerId = req.params.id;
+
+        if (!name || !email) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        const updateData = {
+            name,
+            email,
+            phone
+        };
+
+        if (password && password.trim() !== '') {
+            updateData.password = await bcrypt.hash(password, 10);
+        }
+
+        await db('users')
+            .where('id', customerId)
+            .update(updateData);
+
+        console.log('✅ Customer updated successfully:', updateData);
+        res.json({ message: 'Customer updated successfully!' });
+    } catch (error) {
+        console.error('❌ Error editing customer:', error.message);
+        res.status(500).json({ message: 'Could not edit customer: ' + error.message });
+    }
+});
+
+// Delete customer
+protectedRoutes.post('/customers/delete/:id', async (req, res) => {
+    try {
+        const customerId = req.params.id;
+
+        await db('users')
+            .where('id', customerId)
+            .del();
+
+        res.redirect('/admin/customers');
+    } catch (error) {
+        console.error('Error deleting customer:', error);
+        res.status(500).render('404', { title: 'Error', message: 'Could not delete customer' });
+    }
+});
+
+// Add new manager
+protectedRoutes.post('/managers/add', async (req, res) => {
+    try {
+        console.log('🔧 Add Manager Request Body:', req.body);
+        const { name, email, phone, password } = req.body;
+        
+        if (!name || !email || !password) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+        
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newManager = {
+            name,
+            email,
+            phone,
+            password: hashedPassword,
+            role: 'manager',
+            created_at: new Date()
+        };
+
+        await db('users').insert(newManager);
+        console.log('✅ Manager added successfully:', newManager);
+        res.json({ message: 'Manager added successfully!' });
+    } catch (error) {
+        console.error('❌ Error adding manager:', error.message);
+        res.status(500).json({ message: 'Could not add manager: ' + error.message });
+    }
+});
+
+// Edit manager
+protectedRoutes.post('/managers/edit/:id', async (req, res) => {
+    try {
+        console.log('🔧 Edit Manager Request Body:', req.body);
+        const { name, email, phone, password } = req.body;
+        const managerId = req.params.id;
+
+        if (!name || !email) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        const updateData = {
+            name,
+            email,
+            phone
+        };
+
+        if (password && password.trim() !== '') {
+            updateData.password = await bcrypt.hash(password, 10);
+        }
+
+        await db('users')
+            .where('id', managerId)
+            .update(updateData);
+
+        console.log('✅ Manager updated successfully:', updateData);
+        res.json({ message: 'Manager updated successfully!' });
+    } catch (error) {
+        console.error('❌ Error editing manager:', error.message);
+        res.status(500).json({ message: 'Could not edit manager: ' + error.message });
+    }
+});
+
+// Delete manager
+protectedRoutes.post('/managers/delete/:id', async (req, res) => {
+    try {
+        const managerId = req.params.id;
+
+        await db('users')
+            .where('id', managerId)
+            .del();
+
+        res.redirect('/admin/managers');
+    } catch (error) {
+        console.error('Error deleting manager:', error);
+        res.status(500).render('404', { title: 'Error', message: 'Could not delete manager' });
+    }
 });
 
 router.use('/', protectedRoutes);

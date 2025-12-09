@@ -16,7 +16,9 @@ import adminRouter from './routes/admin.route.js';
 import {
   authenticateUser,
   getCartCount,
-  getCategories
+  getCategories,
+  getShopInfo,
+  getUnreadContactCount
 } from './middlewares/auth.js';
 
 // QUAN TRỌNG: Import db.js để khởi tạo kết nối database
@@ -36,6 +38,49 @@ const hbs = engine({
         },
         length: function (arr) {
             return arr ? arr.length : 0;
+        },
+        gt: function (a, b) {
+            return a > b;
+        },
+        gte: function (a, b) {
+            return a >= b;
+        },
+        lt: function (a, b) {
+            return a < b;
+        },
+        subtract: function (a, b) {
+            return a - b;
+        },
+        add: function (a, b) {
+            return a + b;
+        },
+        arrayRange: function (count) {
+            const arr = [];
+            for (let i = 1; i <= count; i++) {
+                arr.push(i);
+            }
+            return arr;
+        },
+        formatDate: function (date) {
+            if (!date) return '';
+            const d = new Date(date);
+            return d.toLocaleDateString('vi-VN', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit' 
+            });
+        },
+        formatDateFull: function (date) {
+            if (!date) return '';
+            const d = new Date(date);
+            return d.toLocaleString('vi-VN', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
         }
     }
 });
@@ -123,6 +168,9 @@ app.engine(
         if (b === undefined || b === null) return options.inverse(this);
         return a > b ? options.fn(this) : options.inverse(this);
       },
+      gt: function (a, b) {
+        return a > b;
+      },
 
       getRatingStats: function (rating, stats) {
         // Kiểm tra nếu stats không tồn tại hoặc không có reviews
@@ -144,6 +192,27 @@ app.engine(
       default: function (value, defaultValue) {
         return value !== undefined && value !== null ? value : defaultValue;
       },
+      formatDate: function (date) {
+        if (!date) return '';
+        const d = new Date(date);
+        return d.toLocaleDateString('vi-VN', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit' 
+        });
+      },
+      formatDateFull: function (date) {
+        if (!date) return '';
+        const d = new Date(date);
+        return d.toLocaleString('vi-VN', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      },
     },
   })
 );
@@ -154,6 +223,7 @@ app.set("views", "./views");
 // STATIC FILES & MIDDLEWARE
 // ======================
 app.use("/static", express.static("static"));
+app.use(express.json());
 app.use(
   express.urlencoded({
     extended: true,
@@ -166,6 +236,8 @@ app.use(
 app.use(authenticateUser);
 app.use(getCartCount);
 app.use(getCategories);
+app.use(getShopInfo);
+app.use(getUnreadContactCount);
 // ======================
 // DEBUG MIDDLEWARE - XÓA SAU KHI FIX
 // ======================

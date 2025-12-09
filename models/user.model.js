@@ -31,6 +31,12 @@ export default {
         const user = await this.findByEmail(email);
         if (!user) return null;
 
+        // Check if account is locked
+        if (user.is_locked) {
+            console.log('❌ Account locked:', email);
+            return null;
+        }
+
         // So sánh password nhập vào với hash trong database
         const isValid = await bcrypt.compare(password, user.password);
         return isValid ? user : null;
