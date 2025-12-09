@@ -75,7 +75,11 @@
                     </div>
                     <h5 class="card-title fw-bold mb-2">Email</h5>
                     <p class="card-text text-muted">
-                        <a href="mailto:contact@petshop.com" class="text-decoration-none text-info fw-bold">contact@petshop.com</a>
+                        {{#if shop.email}}
+                            <a href="mailto:{{shop.email}}" class="text-decoration-none text-info fw-bold">{{shop.email}}</a>
+                        {{else}}
+                            <span class="text-muted">Đang cập nhật</span>
+                        {{/if}}
                     </p>
                     <p class="small text-muted mt-2">
                         Phản hồi trong vòng 24 giờ

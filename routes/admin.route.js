@@ -263,7 +263,7 @@ protectedRoutes.get('/managers', async (req, res) => {
 protectedRoutes.get('/shop-settings', async (req, res) => {
     try {
         // Get shop info from shop_settings table
-        let shop = { id: 1, name: 'PetShop', phone: '', street_address: '', province: '', district: '', ward: '' };
+        let shop = { id: 1, name: 'PetShop', phone: '', email: '', street_address: '', province: '', district: '', ward: '' };
         try {
             const result = await db('shop_settings').where('id', 1).first();
             if (result) {
@@ -288,12 +288,13 @@ protectedRoutes.get('/shop-settings', async (req, res) => {
 // Update shop settings
 protectedRoutes.post('/shop-settings/update', upload.single('logo'), async (req, res) => {
     try {
-        const { name, phone, street_address, province, district, ward } = req.body;
+        const { name, phone, email, street_address, province, district, ward } = req.body;
 
         // Prepare update data
         const updateData = {
             name: name || 'PetShop',
             phone: phone || '',
+            email: email || '',
             street_address: street_address || '',
             province: province || '',
             district: district || '',

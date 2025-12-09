@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS shop_settings (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) DEFAULT 'PetShop',
     phone VARCHAR(20),
+    email VARCHAR(255),
     street_address TEXT,
     province VARCHAR(100),
     district VARCHAR(100),
@@ -13,6 +14,7 @@ CREATE TABLE IF NOT EXISTS shop_settings (
 );
 
 -- Insert default row if not exists
-INSERT INTO shop_settings (id, name, phone, street_address, province, district, ward) 
-VALUES (1, 'PetShop', '', '', '', '', '')
+INSERT INTO shop_settings (id, name, phone, email, street_address, province, district, ward) 
+VALUES (1, 'PetShop', '', '', '', '', '', '')
 ON CONFLICT (id) DO NOTHING;
+

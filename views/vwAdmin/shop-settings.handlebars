@@ -12,14 +12,6 @@
 
             <div class="row">
                 <div class="col-md-8">
-                    <div id="successAlert" class="alert alert-success alert-dismissible fade d-none" role="alert">
-                        <i class="bi bi-check-circle"></i> Shop settings updated successfully!
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    <div id="errorAlert" class="alert alert-danger alert-dismissible fade d-none" role="alert">
-                        <i class="bi bi-exclamation-circle"></i> <span id="errorMessage"></span>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
                     <div class="card shadow">
                         <div class="card-body">
                             <form id="shopSettingsForm">
@@ -31,6 +23,11 @@
                                 <div class="mb-3">
                                     <label class="form-label">Phone</label>
                                     <input type="text" name="phone" class="form-control" value="{{shop.phone}}">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" name="email" class="form-control" value="{{shop.email}}">
                                 </div>
 
                                 <div class="mb-3">
@@ -73,38 +70,136 @@
     </div>
 </div>
 
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white border-0">
+                <h5 class="modal-title">
+                    <i class="bi bi-check-circle me-2"></i>Cập nhật thành công!
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="successMessage" class="mb-0" style="font-size: 16px; line-height: 1.6;">Cài đặt cửa hàng đã được cập nhật thành công.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                    <i class="bi bi-check me-2"></i>Đã hiểu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-circle me-2"></i>Lỗi!
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="errorMessage" class="mb-0" style="font-size: 16px; line-height: 1.6;"></p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                    <i class="bi bi-x me-2"></i>Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-document.getElementById('shopSettingsForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+    // Initialize modals
+    let successModal = null;
+    let errorModal = null;
 
-    const formData = new FormData(document.getElementById('shopSettingsForm'));
-    const data = Object.fromEntries(formData);
-
-    try {
-        const response = await fetch('/admin/shop-settings/update', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ DOM loaded - initializing shop settings');
         
-        if (result.success) {
-            document.getElementById('successAlert').classList.remove('d-none');
-            setTimeout(() => {
-                document.getElementById('successAlert').classList.add('d-none');
-                window.location.reload();
-            }, 1500);
-        } else {
-            document.getElementById('errorMessage').textContent = result.message;
-            document.getElementById('errorAlert').classList.remove('d-none');
+        const successModalEl = document.getElementById('successModal');
+        const errorModalEl = document.getElementById('errorModal');
+        
+        if (successModalEl) {
+            successModal = new bootstrap.Modal(successModalEl);
+            console.log('✅ Success modal initialized');
         }
-    } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('errorMessage').textContent = 'Failed to update shop settings';
-        document.getElementById('errorAlert').classList.remove('d-none');
+        
+        if (errorModalEl) {
+            errorModal = new bootstrap.Modal(errorModalEl);
+            console.log('✅ Error modal initialized');
+        }
+
+        // Attach form event listener
+        const form = document.getElementById('shopSettingsForm');
+        if (form) {
+            console.log('✅ Shop settings form found, attaching handler');
+            form.addEventListener('submit', handleFormSubmit);
+        }
+    });
+
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        console.log('📝 Shop settings form submitted');
+
+        const formData = new FormData(document.getElementById('shopSettingsForm'));
+        const data = Object.fromEntries(formData);
+
+        console.log('📨 Sending data:', data);
+
+        try {
+            const response = await fetch('/admin/shop-settings/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            console.log('✅ Response received, status:', response.status);
+
+            const result = await response.json();
+            console.log('📦 Response data:', result);
+            
+            if (result.success) {
+                console.log('✅ Settings updated successfully');
+                
+                if (successModal) {
+                    const successMsg = document.getElementById('successMessage');
+                    successMsg.textContent = result.message || 'Cài đặt cửa hàng đã được cập nhật thành công.';
+                    
+                    successModal.show();
+                    console.log('✅ Success modal shown');
+
+                    // Auto-reload after 2 seconds
+                    setTimeout(() => {
+                        console.log('🔄 Reloading page');
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    alert(result.message || 'Settings updated successfully!');
+                    window.location.reload();
+                }
+            } else {
+                throw new Error(result.message || 'Update failed');
+            }
+        } catch (error) {
+            console.error('❌ Error:', error);
+            
+            if (errorModal) {
+                const errorMsg = document.getElementById('errorMessage');
+                errorMsg.textContent = error.message || 'Có lỗi xảy ra, vui lòng thử lại!';
+                
+                errorModal.show();
+                console.log('❌ Error modal shown');
+            } else {
+                alert('Error: ' + (error.message || 'Failed to update settings'));
+            }
+        }
     }
-});
 </script>

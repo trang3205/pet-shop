@@ -238,6 +238,21 @@ app.use(getCartCount);
 app.use(getCategories);
 app.use(getShopInfo);
 app.use(getUnreadContactCount);
+
+// Middleware để tự động truyền locals vào render context
+app.use((req, res, next) => {
+  const originalRender = res.render.bind(res);
+  res.render = function(view, options, callback) {
+    // Merge res.locals vào options
+    const mergedOptions = {
+      ...res.locals,
+      ...(options || {})
+    };
+    return originalRender(view, mergedOptions, callback);
+  };
+  next();
+});
+
 // ======================
 // DEBUG MIDDLEWARE - XÓA SAU KHI FIX
 // ======================

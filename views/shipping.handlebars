@@ -131,8 +131,8 @@
                                         <p><strong>Áp dụng cho:</strong> Hà Nội, TP.HCM, Hải Phòng, Đà Nẵng</p>
                                         <p><strong>Đối tác vận chuyển:</strong></p>
                                         <ul class="list-unstyled ms-3">
-                                            <li>• <i class="bi bi-dot"></i> Ahamove</li>
-                                            <li>• <i class="bi bi-dot"></i> Grab</li>
+                                            <li>• Ahamove</li>
+                                            <li>• Grab</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -331,14 +331,18 @@
 
                     <h6 class="fw-bold mb-3">Thông tin liên hệ</h6>
                     <ul class="list-unstyled small">
+                        {{#if shop.phone}}
                         <li class="mb-2">
                             <i class="bi bi-telephone text-primary"></i>
-                            <strong>Hotline:</strong> 0363 300 905
+                            <strong>Hotline:</strong> <a href="tel:{{shop.phone}}" class="text-decoration-none text-primary">{{shop.phone}}</a>
                         </li>
+                        {{/if}}
+                        {{#if shop.email}}
                         <li class="mb-2">
                             <i class="bi bi-envelope text-primary"></i>
-                            <strong>Email:</strong> support@petshop.com
+                            <strong>Email:</strong> <a href="mailto:{{shop.email}}" class="text-decoration-none text-primary">{{shop.email}}</a>
                         </li>
+                        {{/if}}
                         <li class="mb-2">
                             <i class="bi bi-clock text-primary"></i>
                             <strong>Giờ:</strong> 8:00 - 22:00
@@ -394,5 +398,17 @@
     .accordion-item:hover {
         transform: translateX(5px);
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* Ensure all sections are always visible */
+    section {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .alert {
+        display: block !important;
+        visibility: visible !important;
     }
 </style>
