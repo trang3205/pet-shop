@@ -1,0 +1,74 @@
+<div class="container-fluid">
+    <div class="row">
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Activity History</h1>
+            </div>
+
+            {{#if sessions}}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">User Name</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Role</th>
+                            <th scope="col">Login Time</th>
+                            <th scope="col">Logout Time</th>
+                            <th scope="col">Duration (mins)</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each sessions}}
+                            <tr>
+                                <td>{{this.name}}</td>
+                                <td>{{this.email}}</td>
+                                <td>
+                                    {{#if (eq this.role 'admin')}}
+                                        <span class="badge bg-warning text-dark">admin</span>
+                                    {{else}}
+                                        {{#if (eq this.role 'manager')}}
+                                            <span class="badge bg-info text-dark">manager</span>
+                                        {{else}}
+                                            <span class="badge bg-secondary text-dark">{{this.role}}</span>
+                                        {{/if}}
+                                    {{/if}}
+                                </td>
+                                <td>{{formatDateFull this.login_time}}</td>
+                                <td>
+                                    {{#if this.logout_time}}
+                                        {{formatDateFull this.logout_time}}
+                                    {{else}}
+                                        <span class="badge bg-success text-dark">Active</span>
+                                    {{/if}}
+                                </td>
+                                <td>
+                                    {{#if this.logout_time}}
+                                        {{calculateDuration this.login_time this.logout_time}}
+                                    {{else}}
+                                        -
+                                    {{/if}}
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="viewUserSessions('{{this.user_id}}')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            {{else}}
+                <div class="alert alert-info" role="alert">
+                    No activity records found. Activity will appear here when users log in and out.
+                </div>
+            {{/if}}
+        </main>
+    </div>
+</div>
+
+<script>
+    function viewUserSessions(userId) {
+        window.location.href = `/admin/activity-history/user/${userId}`;
+    }
+</script>

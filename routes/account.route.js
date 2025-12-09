@@ -88,9 +88,8 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        // Check if user exists and account is not locked
         const userRecord = await User.findByEmail(email);
-        
+
         if (userRecord && userRecord.is_locked) {
             return res.render('vwAccount/login', { error: 'Tài khoản này đã bị khóa. Vui lòng liên hệ quản trị viên.' });
         }
@@ -110,6 +109,17 @@ router.post('/login', async (req, res) => {
         console.log('🔍 LOGIN SUCCESS - Session user set:', req.session.user);
         console.log('🔍 LOGIN SUCCESS - Session ID:', req.sessionID);
 
+        // Create session record with role
+        try {
+            await db('sessions').insert({
+                user_id: user.id,
+                role: user.role,
+                login_time: new Date()
+            });
+        } catch (err) {
+            console.error('Error creating session record:', err);
+        }
+
         // Redirect theo role
         if (user.role === 'admin') return res.redirect('/admin');
         if (user.role === 'staff') return res.redirect('/staff');
@@ -127,7 +137,34 @@ router.get('/logout', (req, res) => {
     });
 });
 
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
+    const userId = req.session.user?.id;
+
+    if (userId) {
+        try {
+            // Get the latest active session (without logout_time)
+            const latestSession = await db('sessions')
+                .where('user_id', userId)
+                .whereNull('logout_time')
+                .orderBy('login_time', 'desc')
+                .first();
+
+            if (latestSession) {
+                const logoutTime = new Date();
+                const loginTime = new Date(latestSession.login_time);
+                const durationMinutes = Math.floor((logoutTime - loginTime) / (1000 * 60));
+
+                // Update session with logout time and duration
+                await db('sessions').where('id', latestSession.id).update({
+                    logout_time: logoutTime,
+                    duration_minutes: durationMinutes
+                });
+            }
+        } catch (err) {
+            console.error('Error recording logout:', err);
+        }
+    }
+
     req.session.destroy(() => {
         res.redirect('/');
     });

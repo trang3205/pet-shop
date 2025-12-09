@@ -84,6 +84,12 @@ const hbs = engine({
                 minute: '2-digit',
                 second: '2-digit'
             });
+        },
+        calculateDuration: function (loginTime, logoutTime) {
+            if (!logoutTime) return null;
+            const login = new Date(loginTime).getTime();
+            const logout = new Date(logoutTime).getTime();
+            return Math.floor((logout - login) / (1000 * 60));
         }
     }
 });
@@ -224,6 +230,12 @@ app.engine(
           minute: '2-digit',
           second: '2-digit'
         });
+      },
+      calculateDuration: function (loginTime, logoutTime) {
+        if (!logoutTime) return null;
+        const login = new Date(loginTime).getTime();
+        const logout = new Date(logoutTime).getTime();
+        return Math.floor((logout - login) / (1000 * 60));
       },
     },
   })

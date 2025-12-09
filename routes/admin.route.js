@@ -665,6 +665,83 @@ protectedRoutes.post('/managers/delete/:id', async (req, res) => {
     }
 });
 
+// Activity History - New route for viewing activity logs
+protectedRoutes.get('/activity-history', async (req, res) => {
+    try {
+        // Get all sessions with user details
+        let sessions = await db.raw(`
+            SELECT 
+                s.id,
+                s.user_id,
+                u.name,
+                u.email,
+                u.role AS role,
+                s.login_time,
+                s.logout_time,
+                s.duration_minutes,
+                s.created_at
+            FROM sessions s
+            INNER JOIN users u ON s.user_id = u.id
+            ORDER BY s.login_time DESC
+        `);
+
+        sessions = sessions.rows || sessions;
+
+        res.render('vwAdmin/activity-history', {
+            layout: 'admin',
+            title: 'Activity History',
+            active: 'activity-history',
+            sessions
+        });
+    } catch (error) {
+        console.error('Error fetching activity history:', error);
+        res.status(500).render('404', { title: 'Error', message: 'Could not load activity history' });
+    }
+});
+
+protectedRoutes.get('/activity-history/user/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        
+        // Get user details
+        const userDetails = await db('users').select('*').where('id', userId).first();
+
+        if (!userDetails) {
+            return res.status(404).render('404', { title: 'Error', message: 'User not found' });
+        }
+
+        // Get all sessions for this user
+        let userSessions = await db('sessions')
+            .where('user_id', userId)
+            .orderBy('login_time', 'desc');
+
+        // Calculate duration for sessions that have logout_time but no duration_minutes
+        for (let session of userSessions) {
+            if (session.logout_time && !session.duration_minutes) {
+                const loginTime = new Date(session.login_time);
+                const logoutTime = new Date(session.logout_time);
+                const durationMinutes = Math.floor((logoutTime - loginTime) / (1000 * 60));
+                session.duration_minutes = durationMinutes;
+                
+                // Update database with calculated duration
+                await db('sessions').where('id', session.id).update({
+                    duration_minutes: durationMinutes
+                });
+            }
+        }
+
+        res.render('vwAdmin/activity-details', {
+            layout: 'admin',
+            title: `Activity Details for ${userDetails.name}`,
+            userDetails,
+            userSessions
+        });
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        res.status(500).render('404', { title: 'Error', message: 'Could not load user details' });
+    }
+});
+
 router.use('/', protectedRoutes);
 
 export default router;

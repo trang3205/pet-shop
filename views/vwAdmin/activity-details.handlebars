@@ -1,0 +1,79 @@
+<div class="container-fluid">
+    <div class="row">
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Activity Details - {{userDetails.name}}</h1>
+                <a href="/admin/activity-history" class="btn btn-outline-secondary">Back</a>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">User Information</h5>
+                    <p><strong>User ID:</strong> {{userDetails.id}}</p>
+                    <p><strong>Name:</strong> {{userDetails.name}}</p>
+                    <p><strong>Email:</strong> {{userDetails.email}}</p>
+                    <p><strong>Phone:</strong> {{userDetails.phone}}</p>
+                    <p><strong>Role:</strong> 
+                        {{#if (eq userDetails.role 'admin')}}
+                            <span class="badge bg-warning text-dark">admin</span>
+                        {{else}}
+                            {{#if (eq userDetails.role 'manager')}}
+                                <span class="badge bg-info text-dark">manager</span>
+                            {{else}}
+                                <span class="badge bg-secondary text-dark">{{userDetails.role}}</span>
+                            {{/if}}
+                        {{/if}}
+                    </p>
+                </div>
+            </div>
+
+            <h5 class="mb-3">Login/Logout Sessions</h5>
+            {{#if userSessions}}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">Session #</th>
+                            <th scope="col">Login Time</th>
+                            <th scope="col">Logout Time</th>
+                            <th scope="col">Duration (mins)</th>
+                            <th scope="col">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each userSessions}}
+                            <tr>
+                                <td>{{#add @index 1}}{{/add}}</td>
+                                <td>{{formatDateFull this.login_time}}</td>
+                                <td>
+                                    {{#if this.logout_time}}
+                                        {{formatDateFull this.logout_time}}
+                                    {{else}}
+                                        -
+                                    {{/if}}
+                                </td>
+                                <td>
+                                    {{#if this.logout_time}}
+                                        {{calculateDuration this.login_time this.logout_time}}
+                                    {{else}}
+                                        -
+                                    {{/if}}
+                                </td>
+                                <td>
+                                    {{#if this.logout_time}}
+                                        <span class="badge bg-secondary">Completed</span>
+                                    {{else}}
+                                        <span class="badge bg-success">Active</span>
+                                    {{/if}}
+                                </td>
+                            </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            {{else}}
+                <div class="alert alert-info" role="alert">
+                    No session records found for this user.
+                </div>
+            {{/if}}
+        </main>
+    </div>
+</div>
