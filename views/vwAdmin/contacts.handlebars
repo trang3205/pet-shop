@@ -18,9 +18,49 @@
     </div>
     {{/if}}
 
+    <!-- Filter Section -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="GET" action="/admin/contacts" class="row g-3">
+                <!-- Filter by Subject -->
+                <div class="col-md-4">
+                    <label for="subjectFilter" class="form-label fw-bold">Filter By Title</label>
+                    <select class="form-select" id="subjectFilter" name="subject">
+                        <option value="">-- All Titles --</option>
+                        {{#each subjects}}
+                        <option value="{{this}}" {{#if (eq this ../filterBySubject)}}selected{{/if}}>{{this}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+
+                <!-- Filter by Name -->
+                <div class="col-md-4">
+                    <label for="nameFilter" class="form-label fw-bold">Filter By Name</label>
+                    <input type="text" class="form-control" id="nameFilter" name="name" placeholder="Enter sender's name" value="{{filterByName}}">
+                </div>
+
+                <!-- Filter by Date -->
+                <div class="col-md-4">
+                    <label for="dateFilter" class="form-label fw-bold">Filter By Date</label>
+                    <input type="date" class="form-control" id="dateFilter" name="date" value="{{filterByDate}}">
+                </div>
+
+                <!-- Button Group -->
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search me-2"></i>Search
+                    </button>
+                    <a href="/admin/contacts" class="btn btn-secondary">
+                        <i class="bi bi-x-circle me-2"></i>Remove Filter
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Messages Table -->
     {{#if contacts}}
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0 mb-4">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead class="table-light">
@@ -101,6 +141,18 @@
                             <p class="mb-0" style="white-space: pre-wrap;">{{this.message}}</p>
                         </div>
                     </div>
+                    {{#if this.imgs}}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Hình ảnh đính kèm</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            {{#each (parseImages this.imgs)}}
+                            <a href="/static/imgs/uploadimgs/{{this}}" target="_blank" class="text-decoration-none">
+                                <img src="/static/imgs/uploadimgs/{{this}}" alt="Attached image" style="max-width: 120px; max-height: 120px; border-radius: 4px; border: 1px solid #dee2e6; object-fit: cover; cursor: pointer;">
+                            </a>
+                            {{/each}}
+                        </div>
+                    </div>
+                    {{/if}}
                     <div class="mb-0">
                         <label class="form-label fw-bold">Received</label>
                         <p class="form-control-plaintext text-muted">
@@ -127,25 +179,35 @@
         <ul class="pagination justify-content-center">
             {{#if (gt currentPage 1)}}
             <li class="page-item">
-                <a class="page-link" href="/admin/contacts?page=1">First</a>
+                <a class="page-link" href="/admin/contacts?page=1{{#if filterBySubject}}&subject={{filterBySubject}}{{/if}}{{#if filterByName}}&name={{filterByName}}{{/if}}{{#if filterByDate}}&date={{filterByDate}}{{/if}}">
+                    <i class="bi bi-chevron-double-left"></i> First
+                </a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="/admin/contacts?page={{subtract currentPage 1}}">Previous</a>
+                <a class="page-link" href="/admin/contacts?page={{subtract currentPage 1}}{{#if filterBySubject}}&subject={{filterBySubject}}{{/if}}{{#if filterByName}}&name={{filterByName}}{{/if}}{{#if filterByDate}}&date={{filterByDate}}{{/if}}">
+                    <i class="bi bi-chevron-left"></i> Previous
+                </a>
             </li>
             {{/if}}
 
             {{#each (arrayRange totalPages)}}
             <li class="page-item {{#if (eq this ../currentPage)}}active{{/if}}">
-                <a class="page-link" href="/admin/contacts?page={{this}}">{{this}}</a>
+                <a class="page-link" href="/admin/contacts?page={{this}}{{#if ../filterBySubject}}&subject={{../filterBySubject}}{{/if}}{{#if ../filterByName}}&name={{../filterByName}}{{/if}}{{#if ../filterByDate}}&date={{../filterByDate}}{{/if}}">
+                    {{this}}
+                </a>
             </li>
             {{/each}}
 
             {{#if (lt currentPage totalPages)}}
             <li class="page-item">
-                <a class="page-link" href="/admin/contacts?page={{add currentPage 1}}">Next</a>
+                <a class="page-link" href="/admin/contacts?page={{add currentPage 1}}{{#if filterBySubject}}&subject={{filterBySubject}}{{/if}}{{#if filterByName}}&name={{filterByName}}{{/if}}{{#if filterByDate}}&date={{filterByDate}}{{/if}}">
+                    Next <i class="bi bi-chevron-right"></i>
+                </a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="/admin/contacts?page={{totalPages}}">Last</a>
+                <a class="page-link" href="/admin/contacts?page={{totalPages}}{{#if filterBySubject}}&subject={{filterBySubject}}{{/if}}{{#if filterByName}}&name={{filterByName}}{{/if}}{{#if filterByDate}}&date={{filterByDate}}{{/if}}">
+                    Last <i class="bi bi-chevron-double-right"></i>
+                </a>
             </li>
             {{/if}}
         </ul>

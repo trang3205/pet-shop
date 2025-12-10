@@ -91,6 +91,29 @@ const hbs = engine({
             const login = new Date(loginTime).getTime();
             const logout = new Date(logoutTime).getTime();
             return Math.floor((logout - login) / (1000 * 60));
+        },
+        parseImages: function (imgString) {
+            if (!imgString) return [];
+            try {
+                return JSON.parse(imgString);
+            } catch (e) {
+                console.error('Error parsing images:', e);
+                return [];
+            }
+        },
+        formatDateForInput: function (dateString) {
+            if (!dateString) return '';
+            // If dateString is in dd/mm/yyyy format, convert to yyyy-mm-dd for input[type="date"]
+            const parts = dateString.split('/');
+            if (parts.length === 3) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            // If it's already in another format, try to parse it
+            const d = new Date(dateString);
+            if (!isNaN(d)) {
+                return d.toISOString().split('T')[0];
+            }
+            return '';
         }
     }
 });
@@ -233,6 +256,29 @@ app.engine(
         const logout = new Date(logoutTime).getTime();
         return Math.floor((logout - login) / (1000 * 60));
       },
+      parseImages: function (imgString) {
+        if (!imgString) return [];
+        try {
+          return JSON.parse(imgString);
+        } catch (e) {
+          console.error('Error parsing images:', e);
+          return [];
+        }
+      },
+      formatDateForInput: function (dateString) {
+        if (!dateString) return '';
+        // If dateString is in dd/mm/yyyy format, convert to yyyy-mm-dd for input[type="date"]
+        const parts = dateString.split('/');
+        if (parts.length === 3) {
+          return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        // If it's already in another format, try to parse it
+        const d = new Date(dateString);
+        if (!isNaN(d)) {
+          return d.toISOString().split('T')[0];
+        }
+        return '';
+      }
     },
   })
 );

@@ -5,14 +5,35 @@
                 <h1 class="h2">Activity History</h1>
             </div>
 
-            <!-- Sort Filter -->
+            <!-- Filter Section -->
+            <div class="row mb-4 p-3 bg-light rounded">
+                <div class="col-md-4 mb-2">
+                    <label class="form-label fw-bold">Filter By Role</label>
+                    <select id="roleFilter" class="form-select">
+                        <option value="">-- All Roles --</option>
+                        {{#each roles}}
+                            <option value="{{this}}" {{#if (eq this ../filterByRole)}}selected{{/if}}>{{this}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label fw-bold">Filter By Name</label>
+                    <input type="text" id="nameFilter" class="form-control" placeholder="Enter user's name" value="{{filterByName}}">
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label fw-bold">Filter By Date</label>
+                    <input type="date" id="dateFilter" class="form-control" value="{{formatDateForInput filterByDate}}">
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
             <div class="mb-3">
-                <label class="form-label fw-bold">Sort by:</label>
-                <select class="form-select" style="max-width: 250px;" onchange="changeSortBy(this.value)">
-                    <option value="default" {{#if (eq sortBy 'default')}}selected{{/if}}>Default</option>
-                    <option value="name" {{#if (eq sortBy 'name')}}selected{{/if}}>Name</option>
-                    <option value="date" {{#if (eq sortBy 'date')}}selected{{/if}}>Date</option>
-                </select>
+                <button class="btn btn-primary" onclick="applyFilters()">
+                    <i class="bi bi-search"></i> Search
+                </button>
+                <button class="btn btn-secondary" onclick="clearFilters()">
+                    <i class="bi bi-x-circle"></i> Remove Filter
+                </button>
             </div>
 
             {{#if sessions}}
@@ -74,25 +95,25 @@
                     <ul class="pagination justify-content-center">
                         <!-- Previous Button -->
                         <li class="page-item {{#if (lte currentPage 1)}}disabled{{/if}}">
-                            <a class="page-link" href="?sortBy={{sortBy}}&page={{subtract currentPage 1}}" {{#if (lte currentPage 1)}}onclick="return false;"{{/if}}>Previous</a>
+                            <a class="page-link" href="?{{#if filterByRole}}role={{filterByRole}}&{{/if}}{{#if filterByName}}name={{filterByName}}&{{/if}}{{#if filterByDate}}date={{filterByDate}}&{{/if}}page={{subtract currentPage 1}}" {{#if (lte currentPage 1)}}onclick="return false;"{{/if}}>Previous</a>
                         </li>
 
                         <!-- Page Numbers -->
-                        {{#each pageArray}}
+                        {{#each pagination.pages}}
                             {{#if (eq this ../currentPage)}}
                                 <li class="page-item active">
                                     <span class="page-link">{{this}}</span>
                                 </li>
                             {{else}}
                                 <li class="page-item">
-                                    <a class="page-link" href="?sortBy={{../sortBy}}&page={{this}}">{{this}}</a>
+                                    <a class="page-link" href="?{{#if ../filterByRole}}role={{../filterByRole}}&{{/if}}{{#if ../filterByName}}name={{../filterByName}}&{{/if}}{{#if ../filterByDate}}date={{../filterByDate}}&{{/if}}page={{this}}">{{this}}</a>
                                 </li>
                             {{/if}}
                         {{/each}}
 
                         <!-- Next Button -->
                         <li class="page-item {{#if (gte currentPage totalPages)}}disabled{{/if}}">
-                            <a class="page-link" href="?sortBy={{sortBy}}&page={{add currentPage 1}}" {{#if (gte currentPage totalPages)}}onclick="return false;"{{/if}}>Next</a>
+                            <a class="page-link" href="?{{#if filterByRole}}role={{filterByRole}}&{{/if}}{{#if filterByName}}name={{filterByName}}&{{/if}}{{#if filterByDate}}date={{filterByDate}}&{{/if}}page={{add currentPage 1}}" {{#if (gte currentPage totalPages)}}onclick="return false;"{{/if}}>Next</a>
                         </li>
                     </ul>
                 </nav>
@@ -110,7 +131,21 @@
         window.location.href = `/admin/activity-history/user/${userId}`;
     }
 
-    function changeSortBy(value) {
-        window.location.href = `?sortBy=${value}&page=1`;
+    function applyFilters() {
+        const role = document.getElementById('roleFilter').value;
+        const name = document.getElementById('nameFilter').value;
+        const date = document.getElementById('dateFilter').value;
+        
+        let url = '?';
+        if (role) url += `role=${encodeURIComponent(role)}&`;
+        if (name) url += `name=${encodeURIComponent(name)}&`;
+        if (date) url += `date=${encodeURIComponent(date)}&`;
+        url += 'page=1';
+        
+        window.location.href = url;
+    }
+
+    function clearFilters() {
+        window.location.href = '?';
     }
 </script>

@@ -107,7 +107,7 @@
                     <h4 class="card-title fw-bold mb-4">
                         <i class="bi bi-chat-left-text"></i> Gửi tin nhắn cho chúng tôi
                     </h4>
-                    <form id="contactForm">
+                    <form id="contactForm" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="name" class="form-label fw-bold">Họ và tên</label>
                             <input type="text" class="form-control form-control-lg" id="name" name="name" required placeholder="Nhập họ và tên">
@@ -133,6 +133,15 @@
                         <div class="mb-3">
                             <label for="message" class="form-label fw-bold">Nội dung tin nhắn</label>
                             <textarea class="form-control" id="message" name="message" rows="5" required placeholder="Nhập nội dung tin nhắn của bạn"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="images" class="form-label fw-bold">Đính kèm hình ảnh (tùy chọn)</label>
+                            <input type="file" class="form-control form-control-lg" id="images" name="images" accept="image/*" multiple>
+                            <small class="text-muted d-block mt-2">
+                                <i class="bi bi-info-circle"></i> Tối đa 5 ảnh, mỗi ảnh không quá 5MB. Định dạng: JPG, PNG, GIF
+                            </small>
+                            <div id="imagePreview" class="mt-3 d-flex gap-2 flex-wrap"></div>
                         </div>
 
                         <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">
@@ -361,28 +370,74 @@
         } else {
             console.error('❌ Contact form not found');
         }
+
+        // Attach image preview handler
+        const imagesInput = document.getElementById('images');
+        if (imagesInput) {
+            imagesInput.addEventListener('change', handleImagePreview);
+            console.log('✅ Image input found, attaching preview handler');
+        } else {
+            console.error('❌ Image input not found');
+        }
     });
+
+    function handleImagePreview(e) {
+        const files = e.target.files;
+        const previewContainer = document.getElementById('imagePreview');
+        previewContainer.innerHTML = ''; // Clear previous previews
+
+        if (files.length === 0) {
+            return;
+        }
+
+        if (files.length > 5) {
+            alert('Tối đa chỉ được upload 5 ảnh!');
+            e.target.value = '';
+            return;
+        }
+
+        // Check file sizes
+        for (let file of files) {
+            if (file.size > 5 * 1024 * 1024) { // 5MB
+                alert('Mỗi ảnh không được vượt quá 5MB!');
+                e.target.value = '';
+                previewContainer.innerHTML = '';
+                return;
+            }
+        }
+
+        // Show previews
+        for (let file of files) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = document.createElement('img');
+                img.src = event.target.result;
+                img.style.maxWidth = '100px';
+                img.style.maxHeight = '100px';
+                img.style.borderRadius = '4px';
+                img.style.objectFit = 'cover';
+                img.style.border = '2px solid #dee2e6';
+                
+                previewContainer.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
 
     async function handleFormSubmit(e) {
         e.preventDefault();
         console.log('📝 Form submitted');
 
-        const formData = {
-            name: document.getElementById('name').value,
-            email: document.getElementById('email').value,
-            subject: document.getElementById('subject').value,
-            message: document.getElementById('message').value
-        };
+        // Sử dụng FormData để xử lý file upload
+        const formData = new FormData(document.getElementById('contactForm'));
 
-        console.log('📨 Sending data:', formData);
+        console.log('📨 Sending data with files');
 
         try {
             const response = await fetch('/contact', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
+                body: formData
+                // Không set Content-Type header, browser sẽ tự set multipart/form-data
             });
 
             console.log('✅ Response received, status:', response.status);
@@ -400,6 +455,7 @@
                     
                     // Reset form first
                     document.getElementById('contactForm').reset();
+                    document.getElementById('imagePreview').innerHTML = '';
                     
                     // Show modal
                     successModal.show();

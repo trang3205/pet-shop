@@ -512,9 +512,36 @@ protectedRoutes.get('/contacts', async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const pageSize = 10;
         const offset = (page - 1) * pageSize;
+        
+        // Get filter parameters
+        const filterBySubject = req.query.subject || '';
+        const filterByName = req.query.name || '';
+        const filterByDate = req.query.date || '';
 
-        // Get total count
-        const countResult = await db('contacts').count('id as total').first();
+        // Build query with filters
+        let query = db('contacts');
+        
+        if (filterBySubject) {
+            query = query.where('subject', 'ilike', `%${filterBySubject}%`);
+        }
+        
+        if (filterByName) {
+            query = query.where('name', 'ilike', `%${filterByName}%`);
+        }
+        
+        if (filterByDate) {
+            // Filter by date range (from start of day to end of day)
+            const startDate = new Date(filterByDate);
+            startDate.setHours(0, 0, 0, 0);
+            
+            const endDate = new Date(filterByDate);
+            endDate.setHours(23, 59, 59, 999);
+            
+            query = query.whereBetween('created_at', [startDate, endDate]);
+        }
+
+        // Get total count with filters
+        const countResult = await query.clone().count('id as total').first();
         const totalContacts = countResult?.total || 0;
         const totalPages = Math.ceil(totalContacts / pageSize);
 
@@ -522,11 +549,36 @@ protectedRoutes.get('/contacts', async (req, res) => {
         const unreadResult = await db('contacts').where('is_read', false).count('id as count').first();
         const unreadCount = unreadResult?.count || 0;
 
-        // Get contacts with pagination
-        const contacts = await db('contacts')
+        // Get contacts with pagination and filters
+        const contacts = await query
             .orderBy('created_at', 'desc')
             .limit(pageSize)
             .offset(offset);
+
+        // Get unique subjects for filter dropdown
+        const subjectsResult = await db('contacts')
+            .select('subject')
+            .distinct()
+            .orderBy('subject');
+        const dbSubjects = subjectsResult.map(row => row.subject);
+        
+        // Define all possible subjects in order
+        const allSubjects = [
+            'Hỏi về sản phẩm',
+            'Vấn đề về đơn hàng',
+            'Góp ý dịch vụ',
+            'Hợp tác kinh doanh',
+            'Khác'
+        ];
+        
+        // Merge DB subjects with predefined subjects, keep order with Khác at the end
+        const uniqueSubjects = new Set([...dbSubjects, ...allSubjects]);
+        const subjects = Array.from(uniqueSubjects).sort((a, b) => {
+            // Move 'Khác' to the end
+            if (a === 'Khác') return 1;
+            if (b === 'Khác') return -1;
+            return a.localeCompare(b, 'vi');
+        });
 
         res.render('vwAdmin/contacts', {
             layout: 'admin',
@@ -536,7 +588,14 @@ protectedRoutes.get('/contacts', async (req, res) => {
             currentPage: page,
             totalPages,
             totalContacts,
-            unreadCount
+            unreadCount,
+            subjects,
+            filterBySubject,
+            filterByName,
+            filterByDate,
+            pagination: {
+                pages: Array.from({length: totalPages}, (_, i) => i + 1)
+            }
         });
     } catch (error) {
         console.error('Error loading contacts:', error);
@@ -548,6 +607,7 @@ protectedRoutes.get('/contacts', async (req, res) => {
             currentPage: 1,
             totalPages: 0,
             totalContacts: 0,
+            subjects: [],
             error: 'Lỗi khi tải tin nhắn'
         });
     }
@@ -818,113 +878,95 @@ protectedRoutes.post('/managers/delete/:id', async (req, res) => {
 // Activity History - New route for viewing activity logs
 protectedRoutes.get('/activity-history', async (req, res) => {
     try {
-        const sortBy = req.query.sortBy || 'default'; // default, name, date
         const page = parseInt(req.query.page) || 1;
-        let itemsPerPage = 12;
+        const itemsPerPage = 10;
+        const offset = (page - 1) * itemsPerPage;
         
-        // Get all sessions with user details
-        let allSessions = await db('sessions as s')
+        // Get filter parameters
+        const filterByRole = req.query.role || '';
+        const filterByName = req.query.name || '';
+        const filterByDate = req.query.date || '';
+        
+        // Build base query
+        let query = db('sessions as s')
             .select('s.id', 's.user_id', 's.role', 's.login_time', 's.logout_time', 's.duration_minutes', 's.created_at', 'u.name', 'u.email')
             .innerJoin('users as u', 's.user_id', 'u.id')
             .orderBy('s.login_time', 'desc');
         
-        console.log('📊 Activity History - Query result count:', allSessions.length);
-
-        let sessions = allSessions.rows || allSessions;
-        let paginatedSessions = [];
-        let totalPages = 1;
-        let offset = (page - 1) * itemsPerPage;
-
-        if (sortBy === 'name') {
-            // Sort by name: group by user name, 5 activities per page per user
-            itemsPerPage = 5;
-            offset = (page - 1) * itemsPerPage;
-            
-            // Group sessions by name
-            const groupedByName = {};
-            sessions.forEach(session => {
-                if (!groupedByName[session.name]) {
-                    groupedByName[session.name] = [];
-                }
-                groupedByName[session.name].push(session);
-            });
-
-            // Get sorted names
-            const sortedNames = Object.keys(groupedByName).sort();
-            
-            // Find which name group this page belongs to
-            let currentIndex = 0;
-            for (const name of sortedNames) {
-                const nameActivities = groupedByName[name];
-                const startIdx = currentIndex;
-                const endIdx = currentIndex + nameActivities.length;
-
-                // Check if current page falls in this user's activities
-                const pageStart = offset;
-                const pageEnd = offset + itemsPerPage;
-
-                if (pageStart < endIdx && pageEnd > startIdx) {
-                    const localStart = Math.max(0, pageStart - startIdx);
-                    const localEnd = Math.min(nameActivities.length, pageEnd - startIdx);
-                    paginatedSessions.push(...nameActivities.slice(localStart, localEnd));
-                }
-
-                currentIndex = endIdx;
-            }
-
-            // Calculate total pages for name-based pagination
-            let totalActivitiesByName = 0;
-            Object.values(groupedByName).forEach(activities => {
-                totalActivitiesByName += Math.ceil(activities.length / itemsPerPage);
-            });
-            totalPages = totalActivitiesByName;
-
-        } else if (sortBy === 'date') {
-            // Sort by date: group by date, all activities of that date per page
-            const groupedByDate = {};
-            
-            sessions.forEach(session => {
-                const dateStr = new Date(session.login_time).toLocaleDateString('en-CA'); // YYYY-MM-DD format
-                if (!groupedByDate[dateStr]) {
-                    groupedByDate[dateStr] = [];
-                }
-                groupedByDate[dateStr].push(session);
-            });
-
-            // Get sorted dates in descending order
-            const sortedDates = Object.keys(groupedByDate).sort().reverse();
-            
-            // Get the date group for this page
-            if (sortedDates.length > 0) {
-                const pageIndex = page - 1;
-                if (pageIndex < sortedDates.length) {
-                    paginatedSessions = groupedByDate[sortedDates[pageIndex]];
-                }
-                totalPages = sortedDates.length;
-            }
-
-        } else {
-            // Default: sort by login time, 12 per page
-            const totalSessions = sessions.length;
-            totalPages = Math.ceil(totalSessions / itemsPerPage);
-            paginatedSessions = sessions.slice(offset, offset + itemsPerPage);
+        // Apply filters
+        if (filterByRole) {
+            query = query.where('s.role', 'ILIKE', `%${filterByRole}%`);
         }
+        
+        if (filterByName) {
+            query = query.where('u.name', 'ILIKE', `%${filterByName}%`);
+        }
+        
+        if (filterByDate) {
+            // Parse date - handle both yyyy-mm-dd (from input) and dd/mm/yyyy formats
+            let dateStr = filterByDate;
+            if (filterByDate.includes('-') && !filterByDate.includes('/')) {
+                // Already in yyyy-mm-dd format from input[type="date"]
+                dateStr = filterByDate;
+            } else if (filterByDate.includes('/')) {
+                // Convert dd/mm/yyyy to yyyy-mm-dd
+                const [day, month, year] = filterByDate.split('/');
+                if (day && month && year) {
+                    dateStr = `${year}-${month}-${day}`;
+                }
+            }
+            
+            const dateStart = new Date(`${dateStr}T00:00:00Z`);
+            const dateEnd = new Date(`${dateStr}T23:59:59Z`);
+            query = query.whereBetween('s.login_time', [dateStart, dateEnd]);
+        }
+        
+        // Get total count - need to get all results for accurate count
+        const allResults = await query.clone();
+        const totalSessions = allResults.length;
+        const totalPages = Math.ceil(totalSessions / itemsPerPage);
+        
+        console.log('📊 Activity History - Total sessions:', totalSessions, 'Page:', page, 'Filters:', {filterByRole, filterByName, filterByDate});
+
+        // Get paginated results
+        const sessions = allResults.slice(offset, offset + itemsPerPage);
+        
+        // Get unique roles for filter dropdown - from users table since sessions may not have all roles
+        const rolesResult = await db('users').distinct('role').whereNotNull('role');
+        const roles = rolesResult.map(r => r.role).filter(r => r).sort();
 
         res.render('vwAdmin/activity-history', {
             layout: 'admin',
             title: 'Activity History',
             active: 'activity-history',
-            sessions: paginatedSessions,
-            sortBy: sortBy,
+            sessions: sessions,
             currentPage: page,
             totalPages: totalPages,
+            totalSessions: totalSessions,
             itemsPerPage: itemsPerPage,
             hasPages: totalPages > 1,
-            pageArray: Array.from({length: Math.min(totalPages, 5)}, (_, i) => i + 1)
+            pageArray: Array.from({length: Math.min(totalPages, 5)}, (_, i) => i + 1),
+            filterByRole: filterByRole,
+            filterByName: filterByName,
+            filterByDate: filterByDate,
+            roles: roles,
+            pagination: {
+                pages: Array.from({length: totalPages}, (_, i) => i + 1)
+            }
         });
     } catch (error) {
         console.error('Error fetching activity history:', error);
-        res.status(500).render('404', { title: 'Error', message: 'Could not load activity history' });
+        res.render('vwAdmin/activity-history', {
+            layout: 'admin',
+            title: 'Activity History',
+            active: 'activity-history',
+            sessions: [],
+            currentPage: 1,
+            totalPages: 0,
+            totalSessions: 0,
+            roles: [],
+            error: 'Lỗi khi tải lịch sử hoạt động'
+        });
     }
 });
 
