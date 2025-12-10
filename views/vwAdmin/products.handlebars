@@ -5,12 +5,6 @@
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">Products Management</h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <button type="button" class="btn btn-primary" onclick="openAddModal()">
-                        <i class="bi bi-plus"></i>
-                        Add New Product
-                    </button>
-                </div>
             </div>
 
             <!-- Search and Filters -->
@@ -24,10 +18,10 @@
                     </form>
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select" id="categoryFilter" onchange="redirectToCategory()">
+                    <select class="form-select" id="categoryFilter" onchange="redirectToCategory()" data-category="{{category}}">
                         <option value="">All Categories</option>
                         {{#each categories}}
-                        <option value="{{this.id}}" {{#if (eq this.id ../category)}}selected{{/if}}>{{this.name}}</option>
+                        <option value="{{this.id}}">{{this.name}}</option>
                         {{/each}}
                     </select>
                 </div>
@@ -80,16 +74,6 @@
                                 {{else}}
                                 <span class="badge bg-success">In Stock</span>
                                 {{/if}}
-                            </div>
-                        </div>
-                        <div class="card-footer bg-transparent">
-                            <div class="d-flex justify-content-between">
-                                <button class="btn btn-sm btn-info" onclick="editProduct({{this.id}})">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteProduct({{this.id}})">
-                                    <i class="bi bi-trash"></i> Delete
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -145,6 +129,17 @@
 </style>
 
 <script>
+// Set select value on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const categoryFilter = document.getElementById('categoryFilter');
+    const category = categoryFilter.getAttribute('data-category');
+    if (category && category !== '') {
+        categoryFilter.value = category;
+    } else {
+        categoryFilter.value = '';
+    }
+});
+
 function redirectToCategory() {
     const select = document.getElementById('categoryFilter');
     const category = select.options[select.selectedIndex].value;

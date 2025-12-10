@@ -75,6 +75,58 @@ router.post('/verify-otp', async (req, res) => {
     }
 });
 
+// ========== VERIFY ADMIN OTP ==========
+router.get('/verify-admin-otp', (req, res) => {
+    const email = req.query.email;
+    if (!email || !req.session.tempAdmin) {
+        return res.redirect('/admin/login');
+    }
+    res.render('vwAccount/verify-admin-otp', { email, error: null });
+});
+
+router.post('/verify-admin-otp', async (req, res) => {
+    const { email, otp_code } = req.body;
+    if (!email || !otp_code || !req.session.tempAdmin) {
+        return res.redirect('/admin/login');
+    }
+
+    try {
+        const isValid = await otpService.verify(email, otp_code, 'admin');
+        if (!isValid) {
+            return res.render('vwAccount/verify-admin-otp', { email, error: 'Mã OTP không hợp lệ hoặc đã hết hạn.' });
+        }
+
+        const adminUser = req.session.tempAdmin;
+        req.session.user = {
+            id: adminUser.id,
+            name: adminUser.name,
+            email: adminUser.email,
+            role: adminUser.role
+        };
+
+        console.log('✅ ADMIN LOGIN SUCCESS - Session user set:', req.session.user);
+
+        // Create session record with user info
+        try {
+            await db('sessions').insert({
+                user_id: adminUser.id,
+                name: adminUser.name,
+                email: adminUser.email,
+                role: adminUser.role,
+                login_time: new Date()
+            });
+        } catch (err) {
+            console.error('Error creating session record:', err);
+        }
+
+        delete req.session.tempAdmin;
+        return res.redirect('/admin/dashboard');
+    } catch (error) {
+        console.error('Admin OTP verification error:', error);
+        return res.render('vwAccount/verify-admin-otp', { email, error: 'Đã có lỗi xảy ra. Vui lòng thử lại.' });
+    }
+});
+
 // ========== LOGIN ==========
 router.get('/login', (req, res) => {
     const success = req.query.success === '1' ? 'Đăng ký thành công! Vui lòng đăng nhập.' : null;
@@ -82,7 +134,7 @@ router.get('/login', (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, redirectTo } = req.body;
     if (!email || !password) {
         return res.render('vwAccount/login', { error: 'Vui lòng nhập email và mật khẩu.' });
     }
@@ -99,6 +151,38 @@ router.post('/login', async (req, res) => {
             return res.render('vwAccount/login', { error: 'Email hoặc mật khẩu không đúng.' });
         }
 
+        // Check if this is admin login from admin page (redirectTo indicates this)
+        if (redirectTo === '/admin/dashboard') {
+            // Admin login must be from admin page and user must be admin
+            if (user.role !== 'admin') {
+                return res.render('vwAdmin/login', { error: 'Chỉ tài khoản Admin mới có thể đăng nhập tại đây.' });
+            }
+
+            // For admin login, require OTP verification
+            try {
+                const otpCode = await otpService.create(email, 'admin');
+                await emailService.sendOTP(email, otpCode, 'admin');
+
+                // Store admin user info temporarily in session for OTP verification
+                req.session.tempAdmin = {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role
+                };
+
+                return res.redirect(`/account/verify-admin-otp?email=${encodeURIComponent(email)}`);
+            } catch (error) {
+                console.error('Error sending admin OTP:', error);
+                return res.render('vwAdmin/login', { error: 'Có lỗi xảy ra khi gửi OTP. Vui lòng thử lại.' });
+            }
+        } else {
+            // Customer/Manager login - admins cannot use regular login
+            if (user.role === 'admin') {
+                return res.render('vwAccount/login', { error: 'Tài khoản Admin không thể đăng nhập tại đây. Vui lòng sử dụng chức năng "Login as Admin".' });
+            }
+        }
+
         req.session.user = {
             id: user.id,
             name: user.name,
@@ -109,10 +193,12 @@ router.post('/login', async (req, res) => {
         console.log('🔍 LOGIN SUCCESS - Session user set:', req.session.user);
         console.log('🔍 LOGIN SUCCESS - Session ID:', req.sessionID);
 
-        // Create session record with role
+        // Create session record with user info
         try {
             await db('sessions').insert({
                 user_id: user.id,
+                name: user.name,
+                email: user.email,
                 role: user.role,
                 login_time: new Date()
             });
@@ -120,9 +206,13 @@ router.post('/login', async (req, res) => {
             console.error('Error creating session record:', err);
         }
 
-        // Redirect theo role
+        // Redirect theo redirectTo hoặc role
+        if (redirectTo) {
+            return res.redirect(redirectTo);
+        }
         if (user.role === 'admin') return res.redirect('/admin');
-        if (user.role === 'staff') return res.redirect('/staff');
+        if (user.role === 'manager') return res.redirect('/');
+        return res.redirect('/');
         return res.redirect('/');
     } catch (error) {
         console.error('Login error:', error);

@@ -6,6 +6,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import fs from 'fs/promises';
+import otpService from '../utils/otp.service.js';
+import emailService from '../utils/email.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,6 +52,105 @@ router.get('/login', (req, res) => {
     res.render('vwAdmin/login');
 });
 
+// ========== ADMIN FORGOT PASSWORD ==========
+router.get('/forgot-password', (req, res) => {
+    res.render('vwAdmin/forgot-password', { error: null });
+});
+
+router.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.render('vwAdmin/forgot-password', { error: 'Vui lòng nhập email.' });
+    }
+
+    try {
+        const user = await db('users').where('email', email).where('role', 'admin').first();
+        
+        if (!user) {
+            return res.render('vwAdmin/forgot-password', { error: 'Email không tồn tại hoặc không phải tài khoản Admin.' });
+        }
+
+        // Send OTP
+        const otpCode = await otpService.create(email, 'forgot');
+        await emailService.sendOTP(email, otpCode, 'forgot');
+
+        // Store admin email in session
+        req.session.adminResetEmail = email;
+
+        return res.redirect(`/admin/verify-reset-otp?email=${encodeURIComponent(email)}`);
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        return res.render('vwAdmin/forgot-password', { error: 'Có lỗi xảy ra. Vui lòng thử lại.' });
+    }
+});
+
+router.get('/verify-reset-otp', (req, res) => {
+    const email = req.query.email;
+    if (!email || !req.session.adminResetEmail) {
+        return res.redirect('/admin/forgot-password');
+    }
+    res.render('vwAdmin/verify-reset-otp', { email, error: null });
+});
+
+router.post('/verify-reset-otp', async (req, res) => {
+    const { email, otp_code } = req.body;
+    if (!email || !otp_code || !req.session.adminResetEmail) {
+        return res.redirect('/admin/forgot-password');
+    }
+
+    try {
+        const isValid = await otpService.verify(email, otp_code, 'forgot');
+        if (!isValid) {
+            return res.render('vwAdmin/verify-reset-otp', { email, error: 'Mã OTP không hợp lệ hoặc đã hết hạn.' });
+        }
+
+        // Store admin email for password reset
+        req.session.adminResetEmail = email;
+        return res.redirect(`/admin/reset-password?email=${encodeURIComponent(email)}`);
+    } catch (error) {
+        console.error('OTP verification error:', error);
+        return res.render('vwAdmin/verify-reset-otp', { email, error: 'Đã có lỗi xảy ra. Vui lòng thử lại.' });
+    }
+});
+
+router.get('/reset-password', (req, res) => {
+    const email = req.query.email;
+    if (!email || !req.session.adminResetEmail) {
+        return res.redirect('/admin/forgot-password');
+    }
+    res.render('vwAdmin/reset-password', { email, error: null });
+});
+
+router.post('/reset-password', async (req, res) => {
+    const { email, password, confirm_password } = req.body;
+    if (!email || !password || !confirm_password || !req.session.adminResetEmail) {
+        return res.redirect('/admin/forgot-password');
+    }
+
+    if (password !== confirm_password) {
+        return res.render('vwAdmin/reset-password', { email, error: 'Mật khẩu xác nhận không khớp.' });
+    }
+
+    if (password.length < 6) {
+        return res.render('vwAdmin/reset-password', { email, error: 'Mật khẩu phải có ít nhất 6 ký tự.' });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        await db('users')
+            .where('email', email)
+            .where('role', 'admin')
+            .update({ password: hashedPassword });
+
+        delete req.session.adminResetEmail;
+        res.render('vwAdmin/reset-password-success');
+    } catch (error) {
+        console.error('Reset password error:', error);
+        return res.render('vwAdmin/reset-password', { email, error: 'Đã có lỗi xảy ra. Vui lòng thử lại.' });
+    }
+});
+
 // Protected routes with authentication
 const protectedRoutes = express.Router();
 protectedRoutes.use(requireAdmin);
@@ -65,6 +166,7 @@ protectedRoutes.get('/dashboard', async (req, res) => {
             layout: 'admin',
             title: 'Dashboard',
             active: 'dashboard',
+            user: req.session.user,
             stats: {
                 totalCustomers: totalCustomers.count,
                 totalManagers: totalManagers.count,
@@ -81,12 +183,36 @@ protectedRoutes.get('/dashboard', async (req, res) => {
 // Customer Locks
 protectedRoutes.get('/customer-locks', async (req, res) => {
     try {
-        const customers = await db.select('*').from('users').where('role', 'customer');
+        const page = parseInt(req.query.page) || 1;
+        const itemsPerPage = 12;
+        const offset = (page - 1) * itemsPerPage;
+
+        // Get total count
+        const countResult = await db('users').where('role', 'customer').count('* as count').first();
+        const totalCustomers = countResult.count;
+        const totalPages = Math.ceil(totalCustomers / itemsPerPage);
+
+        // Get paginated customers
+        const customers = await db('users')
+            .where('role', 'customer')
+            .limit(itemsPerPage)
+            .offset(offset)
+            .orderBy('created_at', 'desc');
+
         res.render('vwAdmin/customer-locks', {
             layout: 'admin',
             title: 'Customer Account Locks',
             active: 'customer-locks',
-            customers
+            customers,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalItems: totalCustomers,
+                itemsPerPage,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+                pages: Array.from({ length: totalPages }, (_, i) => i + 1)
+            }
         });
     } catch (error) {
         console.error('Error fetching customers:', error);
@@ -123,12 +249,36 @@ protectedRoutes.post('/customer-locks/toggle/:id', async (req, res) => {
 // Manager Locks
 protectedRoutes.get('/manager-locks', async (req, res) => {
     try {
-        const managers = await db.select('*').from('users').where('role', 'manager');
+        const page = parseInt(req.query.page) || 1;
+        const itemsPerPage = 12;
+        const offset = (page - 1) * itemsPerPage;
+
+        // Get total count
+        const countResult = await db('users').where('role', 'manager').count('* as count').first();
+        const totalManagers = countResult.count;
+        const totalPages = Math.ceil(totalManagers / itemsPerPage);
+
+        // Get paginated managers
+        const managers = await db('users')
+            .where('role', 'manager')
+            .limit(itemsPerPage)
+            .offset(offset)
+            .orderBy('created_at', 'desc');
+
         res.render('vwAdmin/manager-locks', {
             layout: 'admin',
             title: 'Manager Account Locks',
             active: 'manager-locks',
-            managers
+            managers,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalItems: totalManagers,
+                itemsPerPage,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+                pages: Array.from({ length: totalPages }, (_, i) => i + 1)
+            }
         });
     } catch (error) {
         console.error('Error fetching managers:', error);
@@ -191,7 +341,7 @@ protectedRoutes.post('/profile/update', upload.single('avatar'), async (req, res
 
         // Add avatar if uploaded
         if (req.file) {
-            updateData.avatar = req.file.filename;
+            updateData.avatar_url = req.file.filename;
         }
 
         // Hash password if provided
@@ -207,7 +357,7 @@ protectedRoutes.post('/profile/update', upload.single('avatar'), async (req, res
         // Update session user info
         req.session.user.name = name;
         if (req.file) {
-            req.session.user.avatar = req.file.filename;
+            req.session.user.avatar_url = req.file.filename;
         }
 
         console.log('✅ Profile updated successfully');

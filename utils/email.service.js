@@ -12,7 +12,9 @@ const transporter = nodemailer.createTransport({
 class EmailService {
     async sendOTP(email, code, type = 'register') {
         const subject = type === 'register' 
-            ? 'Xác thực email - Pet Shop' 
+            ? 'Xác thực email - Pet Shop'
+            : type === 'admin'
+            ? 'Verify OTP - Pet Shop'
             : 'Đặt lại mật khẩu - Pet Shop';
 
         const html = this._buildOTPTemplate(code, type);
@@ -33,11 +35,27 @@ class EmailService {
     }
 
     _buildOTPTemplate(code, type) {
-        const title = type === 'register' ? 'Xác thực email' : 'Đặt lại mật khẩu';
+        let title = 'Xác thực email';
+        let description = 'Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.';
+
+        if (type === 'admin') {
+            title = 'Verify OTP';
+            description = 'We have sent an OTP code to verify your admin access.';
+        } else if (type === 'register') {
+            title = 'Xác thực email';
+            description = 'Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.';
+        } else if (type === 'forgot') {
+            title = 'Reset Password';
+            description = 'We have sent an OTP code to reset your admin password.';
+        } else {
+            title = 'Đặt lại mật khẩu';
+            description = 'Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.';
+        }
+
         return `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #4CAF50;">${title} - Pet Shop</h2>
-                <p>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.</p>
+                <p>${description}</p>
                 <div style="background: #f4f4f4; padding: 15px; text-align: center; margin: 20px 0;">
                     <h1 style="margin: 0; color: #333; letter-spacing: 5px;">${code}</h1>
                 </div>
