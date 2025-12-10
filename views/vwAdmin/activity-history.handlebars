@@ -5,6 +5,16 @@
                 <h1 class="h2">Activity History</h1>
             </div>
 
+            <!-- Sort Filter -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Sort by:</label>
+                <select class="form-select" style="max-width: 250px;" onchange="changeSortBy(this.value)">
+                    <option value="default" {{#if (eq sortBy 'default')}}selected{{/if}}>Default</option>
+                    <option value="name" {{#if (eq sortBy 'name')}}selected{{/if}}>Name</option>
+                    <option value="date" {{#if (eq sortBy 'date')}}selected{{/if}}>Date</option>
+                </select>
+            </div>
+
             {{#if sessions}}
                 <table class="table table-striped">
                     <thead>
@@ -58,6 +68,34 @@
                         {{/each}}
                     </tbody>
                 </table>
+
+                <!-- Pagination -->
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <!-- Previous Button -->
+                        <li class="page-item {{#if (lte currentPage 1)}}disabled{{/if}}">
+                            <a class="page-link" href="?sortBy={{sortBy}}&page={{subtract currentPage 1}}" {{#if (lte currentPage 1)}}onclick="return false;"{{/if}}>Previous</a>
+                        </li>
+
+                        <!-- Page Numbers -->
+                        {{#each pageArray}}
+                            {{#if (eq this ../currentPage)}}
+                                <li class="page-item active">
+                                    <span class="page-link">{{this}}</span>
+                                </li>
+                            {{else}}
+                                <li class="page-item">
+                                    <a class="page-link" href="?sortBy={{../sortBy}}&page={{this}}">{{this}}</a>
+                                </li>
+                            {{/if}}
+                        {{/each}}
+
+                        <!-- Next Button -->
+                        <li class="page-item {{#if (gte currentPage totalPages)}}disabled{{/if}}">
+                            <a class="page-link" href="?sortBy={{sortBy}}&page={{add currentPage 1}}" {{#if (gte currentPage totalPages)}}onclick="return false;"{{/if}}>Next</a>
+                        </li>
+                    </ul>
+                </nav>
             {{else}}
                 <div class="alert alert-info" role="alert">
                     No activity records found. Activity will appear here when users log in and out.
@@ -70,5 +108,9 @@
 <script>
     function viewUserSessions(userId) {
         window.location.href = `/admin/activity-history/user/${userId}`;
+    }
+
+    function changeSortBy(value) {
+        window.location.href = `?sortBy=${value}&page=1`;
     }
 </script>

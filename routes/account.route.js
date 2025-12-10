@@ -101,7 +101,8 @@ router.post('/verify-admin-otp', async (req, res) => {
             id: adminUser.id,
             name: adminUser.name,
             email: adminUser.email,
-            role: adminUser.role
+            role: adminUser.role,
+            avatar_url: adminUser.avatar_url
         };
 
         console.log('✅ ADMIN LOGIN SUCCESS - Session user set:', req.session.user);
@@ -168,7 +169,8 @@ router.post('/login', async (req, res) => {
                     id: user.id,
                     name: user.name,
                     email: user.email,
-                    role: user.role
+                    role: user.role,
+                    avatar_url: user.avatar_url 
                 };
 
                 return res.redirect(`/account/verify-admin-otp?email=${encodeURIComponent(email)}`);
@@ -187,7 +189,8 @@ router.post('/login', async (req, res) => {
             id: user.id,
             name: user.name,
             email: user.email,
-            role: user.role
+            role: user.role,
+            avatar_url: user.avatar_url
         };
 
         console.log('🔍 LOGIN SUCCESS - Session user set:', req.session.user);

@@ -818,8 +818,12 @@ protectedRoutes.post('/managers/delete/:id', async (req, res) => {
 // Activity History - New route for viewing activity logs
 protectedRoutes.get('/activity-history', async (req, res) => {
     try {
+        const sortBy = req.query.sortBy || 'default'; // default, name, date
+        const page = parseInt(req.query.page) || 1;
+        let itemsPerPage = 12;
+        
         // Get all sessions with user details
-        let sessions = await db.raw(`
+        let allSessions = await db.raw(`
             SELECT 
                 s.id,
                 s.user_id,
@@ -835,13 +839,97 @@ protectedRoutes.get('/activity-history', async (req, res) => {
             ORDER BY s.login_time DESC
         `);
 
-        sessions = sessions.rows || sessions;
+        let sessions = allSessions.rows || allSessions;
+        let paginatedSessions = [];
+        let totalPages = 1;
+        let offset = (page - 1) * itemsPerPage;
+
+        if (sortBy === 'name') {
+            // Sort by name: group by user name, 5 activities per page per user
+            itemsPerPage = 5;
+            offset = (page - 1) * itemsPerPage;
+            
+            // Group sessions by name
+            const groupedByName = {};
+            sessions.forEach(session => {
+                if (!groupedByName[session.name]) {
+                    groupedByName[session.name] = [];
+                }
+                groupedByName[session.name].push(session);
+            });
+
+            // Get sorted names
+            const sortedNames = Object.keys(groupedByName).sort();
+            
+            // Find which name group this page belongs to
+            let currentIndex = 0;
+            for (const name of sortedNames) {
+                const nameActivities = groupedByName[name];
+                const startIdx = currentIndex;
+                const endIdx = currentIndex + nameActivities.length;
+
+                // Check if current page falls in this user's activities
+                const pageStart = offset;
+                const pageEnd = offset + itemsPerPage;
+
+                if (pageStart < endIdx && pageEnd > startIdx) {
+                    const localStart = Math.max(0, pageStart - startIdx);
+                    const localEnd = Math.min(nameActivities.length, pageEnd - startIdx);
+                    paginatedSessions.push(...nameActivities.slice(localStart, localEnd));
+                }
+
+                currentIndex = endIdx;
+            }
+
+            // Calculate total pages for name-based pagination
+            let totalActivitiesByName = 0;
+            Object.values(groupedByName).forEach(activities => {
+                totalActivitiesByName += Math.ceil(activities.length / itemsPerPage);
+            });
+            totalPages = totalActivitiesByName;
+
+        } else if (sortBy === 'date') {
+            // Sort by date: group by date, all activities of that date per page
+            const groupedByDate = {};
+            
+            sessions.forEach(session => {
+                const dateStr = new Date(session.login_time).toLocaleDateString('en-CA'); // YYYY-MM-DD format
+                if (!groupedByDate[dateStr]) {
+                    groupedByDate[dateStr] = [];
+                }
+                groupedByDate[dateStr].push(session);
+            });
+
+            // Get sorted dates in descending order
+            const sortedDates = Object.keys(groupedByDate).sort().reverse();
+            
+            // Get the date group for this page
+            if (sortedDates.length > 0) {
+                const pageIndex = page - 1;
+                if (pageIndex < sortedDates.length) {
+                    paginatedSessions = groupedByDate[sortedDates[pageIndex]];
+                }
+                totalPages = sortedDates.length;
+            }
+
+        } else {
+            // Default: sort by login time, 12 per page
+            const totalSessions = sessions.length;
+            totalPages = Math.ceil(totalSessions / itemsPerPage);
+            paginatedSessions = sessions.slice(offset, offset + itemsPerPage);
+        }
 
         res.render('vwAdmin/activity-history', {
             layout: 'admin',
             title: 'Activity History',
             active: 'activity-history',
-            sessions
+            sessions: paginatedSessions,
+            sortBy: sortBy,
+            currentPage: page,
+            totalPages: totalPages,
+            itemsPerPage: itemsPerPage,
+            hasPages: totalPages > 1,
+            pageArray: Array.from({length: Math.min(totalPages, 5)}, (_, i) => i + 1)
         });
     } catch (error) {
         console.error('Error fetching activity history:', error);

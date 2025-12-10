@@ -5,7 +5,10 @@ import bcrypt from 'bcryptjs';
 export default {
     async findByEmail(email) {
         try {
-            return await db('users').where({ email }).first();
+            return await db('users')
+                .select('id', 'name', 'email', 'password', 'phone', 'role', 'avatar_url', 'is_locked')
+                .where({ email })
+                .first();
         } catch {
             return null;
         }

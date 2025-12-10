@@ -5,6 +5,7 @@ import hbs_sections from "express-handlebars-sections";
 import session from "express-session";
 import path from 'path';
 import { fileURLToPath } from 'url';
+import User from './models/user.model.js';
 
 // Routes
 import homeRouter from './routes/home.route.js';
@@ -126,6 +127,16 @@ app.use(
     },
   })
 );
+
+app.use(async (req, res, next) => {
+    if (req.session.user) {
+        const dbUser = await User.findByEmail(req.session.user.email);
+        res.locals.user = dbUser;
+    } else {
+        res.locals.user = null;
+    }
+    next();
+});
 
 // ======================
 // HANDLEBARS CONFIGURATION
