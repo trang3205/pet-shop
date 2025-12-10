@@ -109,15 +109,19 @@ router.post('/verify-admin-otp', async (req, res) => {
 
         // Create session record with user info
         try {
-            await db('sessions').insert({
+            const loginTime = new Date();
+            console.log('📝 Inserting admin session - User ID:', adminUser.id, 'Role:', adminUser.role, 'Login Time:', loginTime);
+            
+            const result = await db('sessions').insert({
                 user_id: adminUser.id,
-                name: adminUser.name,
-                email: adminUser.email,
                 role: adminUser.role,
-                login_time: new Date()
+                login_time: loginTime
             });
+            
+            console.log('✅ Admin session record created successfully:', result);
         } catch (err) {
-            console.error('Error creating session record:', err);
+            console.error('❌ Error creating admin session record:', err.message);
+            console.error('Error details:', err);
         }
 
         delete req.session.tempAdmin;
@@ -198,15 +202,19 @@ router.post('/login', async (req, res) => {
 
         // Create session record with user info
         try {
-            await db('sessions').insert({
+            const loginTime = new Date();
+            console.log('📝 Inserting session - User ID:', user.id, 'Role:', user.role, 'Login Time:', loginTime);
+            
+            const result = await db('sessions').insert({
                 user_id: user.id,
-                name: user.name,
-                email: user.email,
                 role: user.role,
-                login_time: new Date()
+                login_time: loginTime
             });
+            
+            console.log('✅ Session record created successfully:', result);
         } catch (err) {
-            console.error('Error creating session record:', err);
+            console.error('❌ Error creating session record:', err.message);
+            console.error('Error details:', err);
         }
 
         // Redirect theo redirectTo hoặc role
@@ -224,7 +232,35 @@ router.post('/login', async (req, res) => {
 });
 
 // ========== LOGOUT ==========
-router.get('/logout', (req, res) => {
+router.get('/logout', async (req, res) => {
+    const userId = req.session.user?.id;
+
+    if (userId) {
+        try {
+            // Get the latest active session (without logout_time)
+            const latestSession = await db('sessions')
+                .where('user_id', userId)
+                .whereNull('logout_time')
+                .orderBy('login_time', 'desc')
+                .first();
+
+            if (latestSession) {
+                const logoutTime = new Date();
+                const loginTime = new Date(latestSession.login_time);
+                const durationMinutes = Math.floor((logoutTime - loginTime) / (1000 * 60));
+
+                // Update session with logout time and duration
+                await db('sessions').where('id', latestSession.id).update({
+                    logout_time: logoutTime,
+                    duration_minutes: durationMinutes
+                });
+                console.log('✅ Logout recorded for user:', userId);
+            }
+        } catch (err) {
+            console.error('Error recording logout:', err);
+        }
+    }
+
     req.session.destroy(() => {
         res.redirect('/');
     });
@@ -252,6 +288,7 @@ router.post('/logout', async (req, res) => {
                     logout_time: logoutTime,
                     duration_minutes: durationMinutes
                 });
+                console.log('✅ Logout recorded for user:', userId);
             }
         } catch (err) {
             console.error('Error recording logout:', err);

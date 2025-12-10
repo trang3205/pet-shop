@@ -823,21 +823,12 @@ protectedRoutes.get('/activity-history', async (req, res) => {
         let itemsPerPage = 12;
         
         // Get all sessions with user details
-        let allSessions = await db.raw(`
-            SELECT 
-                s.id,
-                s.user_id,
-                u.name,
-                u.email,
-                u.role AS role,
-                s.login_time,
-                s.logout_time,
-                s.duration_minutes,
-                s.created_at
-            FROM sessions s
-            INNER JOIN users u ON s.user_id = u.id
-            ORDER BY s.login_time DESC
-        `);
+        let allSessions = await db('sessions as s')
+            .select('s.id', 's.user_id', 's.role', 's.login_time', 's.logout_time', 's.duration_minutes', 's.created_at', 'u.name', 'u.email')
+            .innerJoin('users as u', 's.user_id', 'u.id')
+            .orderBy('s.login_time', 'desc');
+        
+        console.log('📊 Activity History - Query result count:', allSessions.length);
 
         let sessions = allSessions.rows || allSessions;
         let paginatedSessions = [];

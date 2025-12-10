@@ -113,21 +113,6 @@ app.use(session({
 // ======================
 app.set("trust proxy", 1);
 
-// ======================
-// SESSION CONFIGURATION
-// ======================
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 1000 * 60 * 60 * 24,
-    },
-  })
-);
-
 app.use(async (req, res, next) => {
     if (req.session.user) {
         const dbUser = await User.findByEmail(req.session.user.email);
