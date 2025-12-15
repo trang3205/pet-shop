@@ -14,12 +14,14 @@ export default {
       .where("products.is_active", true);
   },
 
-  // Lấy sản phẩm nổi bật cho trang chủ
+  // Lấy sản phẩm nổi bật (đánh giá cao)
   async getFeaturedProducts(limit = 8) {
     try {
       return await this.getBaseQuery()
-        .where("products.is_featured", true)
-        .orderBy("products.created_at", "desc")
+        .where("products.average_rating", ">=", 0.0)
+        .where("products.review_count", ">", 0)
+        .orderBy("products.average_rating", "desc")
+        .orderBy("products.review_count", "desc")
         .limit(limit);
     } catch (error) {
       console.error("Get featured products error:", error);
@@ -39,16 +41,48 @@ export default {
     }
   },
 
-  // Lấy sản phẩm bán chạy
+  // Lấy sản phẩm bán chạy (theo order_items) - FIXED VERSION
   async getBestSellingProducts(limit = 8) {
     try {
+      // Tính tổng số lượng bán từ order_items
+      const bestSelling = await db("order_items")
+        .select(
+          "products.*",
+          "categories.name as category_name",
+          "categories.slug as category_slug",
+          db.raw("SUM(order_items.quantity) as total_sold")
+        )
+        .leftJoin("products", "order_items.product_id", "products.id")
+        .leftJoin("categories", "products.category_id", "categories.id")
+        .where("products.is_active", true)
+        .groupBy(
+          "products.id",
+          "categories.name",
+          "categories.slug",
+          "order_items.product_id"
+        )
+        .orderBy("total_sold", "desc")
+        .orderBy("products.average_rating", "desc")
+        .limit(limit);
+
+      // Nếu có sản phẩm bán chạy, trả về
+      if (bestSelling.length > 0) {
+        return bestSelling;
+      }
+
+      // Fallback: Nếu chưa có đơn hàng, lấy sản phẩm rating cao
       return await this.getBaseQuery()
         .orderBy("products.average_rating", "desc")
         .orderBy("products.review_count", "desc")
         .limit(limit);
+
     } catch (error) {
       console.error("Get best selling products error:", error);
-      return [];
+      // Fallback khi lỗi
+      return await this.getBaseQuery()
+        .orderBy("products.average_rating", "desc")
+        .orderBy("products.review_count", "desc")
+        .limit(limit);
     }
   },
 

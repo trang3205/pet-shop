@@ -44,6 +44,8 @@ router.get("/:id", async (req, res) => {
       title: `${product.name} - PetShop`,
       product,
       relatedProducts,
+      reviews,           // ✅ Phải có
+      ratingStats        // ✅ Phải có
     });
   } catch (error) {
     console.error("Product detail by ID error:", error);

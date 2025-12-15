@@ -24,16 +24,23 @@
                             <input type="email" class="form-control" id="email" name="email" required>
                         </div>
                         <div class="mb-3">
-                            <label for="phone" class="form-label">Số điện thoại</label>
-                            <input type="tel" class="form-control" id="phone" name="phone">
+                            <label for="phone" class="form-label">Số điện thoại (tùy chọn)</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" value="{{phone}}"
+                                placeholder="VD: 0901234567" oninput="validatePhoneNumber(this)">
+                            <div class="form-text" id="phoneHelp">Chỉ nhập số, bắt đầu bằng 0</div>
+                            <div class="invalid-feedback" id="phoneError">
+                                Vui lòng nhập số điện thoại hợp lệ
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="password" class="form-label">Mật khẩu</label>
-                            <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                            <input type="password" class="form-control" id="password" name="password" required
+                                minlength="6">
                         </div>
                         <div class="mb-3">
                             <label for="confirm_password" class="form-label">Xác nhận mật khẩu</label>
-                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password"
+                                required>
                         </div>
                         <button type="submit" class="btn btn-success w-100">Đăng ký</button>
                     </form>

@@ -13,6 +13,7 @@ router.get('/register', (req, res) => {
     res.render('vwAccount/register', { error: null });
 });
 
+// ========== REGISTER ==========
 router.post('/register', async (req, res) => {
     const { email, password, confirm_password, name, phone } = req.body;
 
@@ -24,6 +25,13 @@ router.post('/register', async (req, res) => {
     }
     if (password.length < 6) {
         return res.render('vwAccount/register', { error: 'Mật khẩu phải có ít nhất 6 ký tự.' });
+    }
+
+    // ✅ THÊM VALIDATION CHO SỐ ĐIỆN THOẠI
+    if (phone && !isValidPhoneNumber(phone)) {
+        return res.render('vwAccount/register', { 
+            error: 'Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại đúng định dạng.' 
+        });
     }
 
     const existed = await User.findByEmail(email);
@@ -42,6 +50,46 @@ router.post('/register', async (req, res) => {
         return res.render('vwAccount/register', { error: 'Đã có lỗi xảy ra. Vui lòng thử lại.' });
     }
 });
+
+// Helper function để validate số điện thoại Việt Nam
+function isValidPhoneNumber(phone) {
+    if (!phone) return true; // Cho phép để trống
+    
+    // Xóa tất cả khoảng trắng và ký tự đặc biệt
+    const cleanedPhone = phone.replace(/\s+/g, '').replace(/[^\d]/g, '');
+    
+    // Kiểm tra độ dài (10-11 số)
+    if (cleanedPhone.length < 10 || cleanedPhone.length > 11) {
+        return false;
+    }
+    
+    // Kiểm tra bắt đầu bằng 0 hoặc +84
+    if (!cleanedPhone.startsWith('0') && !cleanedPhone.startsWith('84')) {
+        return false;
+    }
+    
+    // Chuẩn hóa thành định dạng bắt đầu bằng 0
+    const normalizedPhone = cleanedPhone.startsWith('84') 
+        ? '0' + cleanedPhone.substring(2) 
+        : cleanedPhone;
+    
+    // Kiểm tra các đầu số hợp lệ tại Việt Nam
+    const validPrefixes = [
+        '086', '096', '097', '098', // Viettel
+        '089', '090', '093', '070', '079', // Mobifone
+        '088', '091', '094', '083', // Vinaphone
+        '092', '056', '058', // Vietnamobile
+        '099', '059', // Gmobile
+        '032', '033', '034', '035', '036', '037', '038', '039', // Viettel cũ
+        '052', '058', '059', // VNPT
+        '076', '078', '077', // MobiFone cũ
+        '081', '082', '083', '084', '085', // Vinaphone cũ
+    ];
+    
+    // Kiểm tra 3 số đầu
+    const prefix = normalizedPhone.substring(0, 3);
+    return validPrefixes.includes(prefix);
+}
 
 // ========== VERIFY OTP ==========
 router.get('/verify-otp', (req, res) => {
@@ -469,7 +517,8 @@ router.get("/reviews", authenticateUser, requireAuth, async (req, res) => {
         'reviews.*',
         'products.name as product_name',
         'products.main_image_url as product_image',
-        'products.slug as product_slug'
+        'products.slug as product_slug',
+        'products.id as product_id'
       )
       .leftJoin('products', 'reviews.product_id', 'products.id')
       .where('reviews.user_id', userId)
@@ -641,6 +690,369 @@ function getStatusText(status) {
   return statusTexts[status] || status;
 }
 
+// GET /account/change-password - Trang đổi mật khẩu
+router.get("/change-password", authenticateUser, requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    
+    // Lấy thông tin user
+    const user = await db("users")
+      .select("id", "email", "name", "phone", "avatar_url", "role", "created_at")
+      .where("id", userId)
+      .first();
 
+    // Lấy thống kê
+    const stats = await Promise.all([
+      db("orders").where("user_id", userId).count('* as count').first(),
+      db("wishlists").where("user_id", userId).count('* as count').first(),
+      db("cart_items").where("user_id", userId).count('* as count').first()
+    ]);
+
+    res.render("vwAccount/change-password", {
+      title: "Đổi mật khẩu - PetShop",
+      user,
+      stats: {
+        orders: stats[0].count || 0,
+        wishlist: stats[1].count || 0,
+        cart: stats[2].count || 0
+      }
+    });
+  } catch (error) {
+    console.error("❌ CHANGE PASSWORD PAGE ERROR:", error);
+    res.redirect('/account/profile');
+  }
+});
+
+// POST /account/change-password/send-otp - Gửi OTP
+router.post("/change-password/send-otp", authenticateUser, requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const { current_password } = req.body;
+
+    // Kiểm tra mật khẩu hiện tại
+    const user = await db("users")
+      .select("password", "email")
+      .where("id", userId)
+      .first();
+
+    const isCurrentPasswordValid = await bcrypt.compare(current_password, user.password);
+    
+    if (!isCurrentPasswordValid) {
+      return res.json({ 
+        success: false, 
+        message: "Mật khẩu hiện tại không đúng" 
+      });
+    }
+
+    // Tạo và gửi OTP
+    const otpCode = await otpService.create(user.email, 'change_password');
+    await emailService.sendOTP(user.email, otpCode, 'change_password');
+
+    // Lưu thông tin tạm thời vào session
+    req.session.changePasswordData = {
+      current_password: current_password,
+      email: user.email,
+      timestamp: Date.now()
+    };
+
+    res.json({ 
+      success: true, 
+      message: "Mã OTP đã được gửi đến email của bạn" 
+    });
+  } catch (error) {
+    console.error("❌ SEND OTP ERROR:", error);
+    res.json({ 
+      success: false, 
+      message: "Có lỗi xảy ra khi gửi mã OTP" 
+    });
+  }
+});
+
+// POST /account/change-password/resend-otp - Gửi lại OTP
+router.post("/change-password/resend-otp", authenticateUser, requireAuth, async (req, res) => {
+  try {
+    if (!req.session.changePasswordData) {
+      return res.json({ 
+        success: false, 
+        message: "Phiên làm việc đã hết hạn. Vui lòng thử lại." 
+      });
+    }
+
+    const { email } = req.session.changePasswordData;
+
+    // Gửi lại OTP
+    const otpCode = await otpService.create(email, 'change_password');
+    await emailService.sendOTP(email, otpCode, 'change_password');
+
+    res.json({ 
+      success: true, 
+      message: "Mã OTP mới đã được gửi" 
+    });
+  } catch (error) {
+    console.error("❌ RESEND OTP ERROR:", error);
+    res.json({ 
+      success: false, 
+      message: "Có lỗi xảy ra khi gửi lại mã OTP" 
+    });
+  }
+});
+
+// POST /account/change-password/verify - Xác thực OTP và đổi mật khẩu
+router.post("/change-password/verify", authenticateUser, requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const { current_password, new_password, confirm_password, otp_code } = req.body;
+
+    // Kiểm tra session data
+    if (!req.session.changePasswordData) {
+      return res.json({ 
+        success: false, 
+        message: "Phiên làm việc đã hết hạn. Vui lòng thử lại." 
+      });
+    }
+
+    const { email, timestamp } = req.session.changePasswordData;
+
+    // Kiểm tra thời gian (30 phút)
+    if (Date.now() - timestamp > 30 * 60 * 1000) {
+      delete req.session.changePasswordData;
+      return res.json({ 
+        success: false, 
+        message: "Phiên làm việc đã hết hạn. Vui lòng thử lại." 
+      });
+    }
+
+    // Xác thực OTP
+    const isValidOTP = await otpService.verify(email, otp_code, 'change_password');
+    if (!isValidOTP) {
+      return res.json({ 
+        success: false, 
+        message: "Mã OTP không hợp lệ hoặc đã hết hạn" 
+      });
+    }
+
+    // Kiểm tra lại mật khẩu hiện tại (để đảm bảo tính nhất quán)
+    const user = await db("users")
+      .select("password")
+      .where("id", userId)
+      .first();
+
+    const isCurrentPasswordValid = await bcrypt.compare(current_password, user.password);
+    if (!isCurrentPasswordValid) {
+      return res.json({ 
+        success: false, 
+        message: "Mật khẩu hiện tại không đúng" 
+      });
+    }
+
+    // Kiểm tra mật khẩu mới
+    if (new_password !== confirm_password) {
+      return res.json({ 
+        success: false, 
+        message: "Mật khẩu xác nhận không khớp" 
+      });
+    }
+
+    if (new_password.length < 6) {
+      return res.json({ 
+        success: false, 
+        message: "Mật khẩu phải có ít nhất 6 ký tự" 
+      });
+    }
+
+    // Hash mật khẩu mới
+    const hashedPassword = await bcrypt.hash(new_password, 12);
+
+    // Cập nhật mật khẩu
+    await db("users")
+      .where("id", userId)
+      .update({
+        password: hashedPassword,
+        updated_at: new Date()
+      });
+
+    // Xóa session data
+    delete req.session.changePasswordData;
+
+    res.json({ 
+      success: true, 
+      message: "Đổi mật khẩu thành công!" 
+    });
+  } catch (error) {
+    console.error("❌ CHANGE PASSWORD VERIFY ERROR:", error);
+    res.json({ 
+      success: false, 
+      message: "Có lỗi xảy ra khi đổi mật khẩu" 
+    });
+  }
+});
+
+// GET /account/forgot-password - Trang quên mật khẩu
+router.get("/forgot-password", (req, res) => {
+    res.render("vwAccount/forgot-password", {
+        title: "Quên mật khẩu - PetShop",
+        error: null,
+        success: null,
+        email: null,
+        step: false
+    });
+});
+
+// POST /account/forgot-password - Xác thực email và gửi OTP
+router.post("/forgot-password", async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        // Kiểm tra email tồn tại
+        const user = await User.findByEmail(email);
+        if (!user) {
+            return res.render("vwAccount/forgot-password", {
+                title: "Quên mật khẩu - PetShop",
+                error: "Email không tồn tại trong hệ thống",
+                success: null,
+                email: null,
+                step: false
+            });
+        }
+
+        // Tạo và gửi OTP
+        const otpCode = await otpService.create(email, 'forgot_password');
+        await emailService.sendOTP(email, otpCode, 'forgot_password');
+
+        // Lưu thông tin vào session
+        req.session.forgotPasswordData = {
+            email: email,
+            timestamp: Date.now()
+        };
+
+        res.render("vwAccount/forgot-password", {
+            title: "Quên mật khẩu - PetShop",
+            error: null,
+            success: "Mã OTP đã được gửi đến email của bạn",
+            email: email,
+            step: true
+        });
+
+    } catch (error) {
+        console.error("❌ FORGOT PASSWORD ERROR:", error);
+        res.render("vwAccount/forgot-password", {
+            title: "Quên mật khẩu - PetShop",
+            error: "Có lỗi xảy ra. Vui lòng thử lại sau.",
+            success: null,
+            email: null,
+            step: false
+        });
+    }
+});
+
+// POST /account/forgot-password/resend-otp - Gửi lại OTP
+router.post("/forgot-password/resend-otp", async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email || !req.session.forgotPasswordData) {
+            return res.json({ 
+                success: false, 
+                message: "Phiên làm việc đã hết hạn" 
+            });
+        }
+
+        // Gửi lại OTP
+        const otpCode = await otpService.create(email, 'forgot_password');
+        await emailService.sendOTP(email, otpCode, 'forgot_password');
+
+        // Cập nhật timestamp
+        req.session.forgotPasswordData.timestamp = Date.now();
+
+        res.json({ 
+            success: true, 
+            message: "Mã OTP mới đã được gửi" 
+        });
+
+    } catch (error) {
+        console.error("❌ RESEND OTP ERROR:", error);
+        res.json({ 
+            success: false, 
+            message: "Có lỗi xảy ra khi gửi lại mã OTP" 
+        });
+    }
+});
+
+// POST /account/forgot-password/reset - Xác thực OTP và reset password
+router.post("/forgot-password/reset", async (req, res) => {
+    try {
+        const { email, otp_code, new_password, confirm_password } = req.body;
+
+        // Kiểm tra session data
+        if (!req.session.forgotPasswordData) {
+            return res.json({ 
+                success: false, 
+                message: "Phiên làm việc đã hết hạn. Vui lòng thử lại." 
+            });
+        }
+
+        const { timestamp } = req.session.forgotPasswordData;
+
+        // Kiểm tra thời gian (30 phút)
+        if (Date.now() - timestamp > 30 * 60 * 1000) {
+            delete req.session.forgotPasswordData;
+            return res.json({ 
+                success: false, 
+                message: "Phiên làm việc đã hết hạn. Vui lòng thử lại." 
+            });
+        }
+
+        // Xác thực OTP
+        const isValidOTP = await otpService.verify(email, otp_code, 'forgot_password');
+        if (!isValidOTP) {
+            return res.json({ 
+                success: false, 
+                message: "Mã OTP không hợp lệ hoặc đã hết hạn" 
+            });
+        }
+
+        // Kiểm tra mật khẩu
+        if (new_password !== confirm_password) {
+            return res.json({ 
+                success: false, 
+                message: "Mật khẩu xác nhận không khớp" 
+            });
+        }
+
+        if (new_password.length < 6) {
+            return res.json({ 
+                success: false, 
+                message: "Mật khẩu phải có ít nhất 6 ký tự" 
+            });
+        }
+
+        // Hash mật khẩu mới
+        const hashedPassword = await bcrypt.hash(new_password, 12);
+
+        // Cập nhật mật khẩu trong database
+        await db("users")
+            .where("email", email)
+            .update({
+                password: hashedPassword,
+                updated_at: new Date()
+            });
+
+        // Xóa session data
+        delete req.session.forgotPasswordData;
+        delete req.session.tempUser;
+
+        res.json({ 
+            success: true, 
+            message: "Đổi mật khẩu thành công! Vui lòng đăng nhập lại." 
+        });
+
+    } catch (error) {
+        console.error("❌ RESET PASSWORD ERROR:", error);
+        res.json({ 
+            success: false, 
+            message: "Có lỗi xảy ra khi đổi mật khẩu" 
+        });
+    }
+});
 
 export default router;

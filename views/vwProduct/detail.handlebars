@@ -148,47 +148,96 @@
                             <p>{{product.usage_instructions}}</p>
                         </div>
 
-                        <!-- 🆕 TAB REVIEWS CONTENT -->
-                        <!-- 🆕 TAB REVIEWS CONTENT -->
-                        <!-- 🆕 TAB REVIEWS CONTENT -->
+
+
+                        <!-- 🆕 TAB REVIEWS CONTENT - SIMPLE VERSION -->
+                        <!-- 🆕 TAB REVIEWS CONTENT - FIXED VERSION -->
                         <div class="tab-pane fade" id="reviews" role="tabpanel">
                             <div class="row">
                                 <!-- Rating Summary -->
                                 <div class="col-md-4">
                                     <div class="text-center mb-4">
-                                        <h2 class="text-warning">{{default ratingStats.avg_rating 0}}</h2>
+                                        <h2 class="text-warning">{{formatRating (default ratingStats.avg_rating 0)}}
+                                        </h2>
                                         <div class="mb-2">
-                                            {{#each (arrayRange 5)}}
-                                            {{#ifGreater this (default ratingStats.avg_rating 0)}}
-                                            <i class="bi bi-star text-warning"></i>
-                                            {{else}}
-                                            <i class="bi bi-star-fill text-warning"></i>
-                                            {{/ifGreater}}
-                                            {{/each}}
+                                            {{{displayStars (default ratingStats.avg_rating 0)}}}
                                         </div>
                                         <p class="text-muted">Dựa trên {{default ratingStats.total_reviews 0}} đánh giá
                                         </p>
                                     </div>
 
                                     <!-- Rating Breakdown - FIXED -->
+                                    <!-- Rating Breakdown - SIMPLE FIXED VERSION -->
+                                    {{#if ratingStats.total_reviews}}
                                     <div class="rating-bars">
-                                        {{#if ratingStats}}
-                                        {{#each (arrayRange 5)}}
-                                        {{#with (getRatingStats @index ratingStats) as |stats|}}
+                                        <!-- Hiển thị 5 sao -->
                                         <div class="d-flex align-items-center mb-2">
-                                            <span class="me-2">{{subtract 6 this}} sao</span>
+                                            <span class="me-2" style="min-width: 50px;">5 sao</span>
                                             <div class="progress flex-grow-1 me-2" style="height: 8px;">
                                                 <div class="progress-bar bg-warning"
-                                                    style="width: {{stats.percentage}}%"></div>
+                                                    style="width: {{#with (getRatingStats 1 ratingStats)}}{{this.percentage}}{{/with}}%">
+                                                </div>
                                             </div>
-                                            <small class="text-muted">({{stats.count}})</small>
+                                            <small class="text-muted" style="min-width: 40px;">
+                                                ({{#with (getRatingStats 1 ratingStats)}}{{this.count}}{{/with}})
+                                            </small>
                                         </div>
-                                        {{/with}}
-                                        {{/each}}
-                                        {{else}}
-                                        <p class="text-muted text-center">Chưa có đánh giá</p>
-                                        {{/if}}
+
+                                        <!-- Hiển thị 4 sao -->
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2" style="min-width: 50px;">4 sao</span>
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-warning"
+                                                    style="width: {{#with (getRatingStats 2 ratingStats)}}{{this.percentage}}{{/with}}%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted" style="min-width: 40px;">
+                                                ({{#with (getRatingStats 2 ratingStats)}}{{this.count}}{{/with}})
+                                            </small>
+                                        </div>
+
+                                        <!-- Hiển thị 3 sao -->
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2" style="min-width: 50px;">3 sao</span>
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-warning"
+                                                    style="width: {{#with (getRatingStats 3 ratingStats)}}{{this.percentage}}{{/with}}%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted" style="min-width: 40px;">
+                                                ({{#with (getRatingStats 3 ratingStats)}}{{this.count}}{{/with}})
+                                            </small>
+                                        </div>
+
+                                        <!-- Hiển thị 2 sao -->
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2" style="min-width: 50px;">2 sao</span>
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-warning"
+                                                    style="width: {{#with (getRatingStats 4 ratingStats)}}{{this.percentage}}{{/with}}%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted" style="min-width: 40px;">
+                                                ({{#with (getRatingStats 4 ratingStats)}}{{this.count}}{{/with}})
+                                            </small>
+                                        </div>
+
+                                        <!-- Hiển thị 1 sao -->
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2" style="min-width: 50px;">1 sao</span>
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-warning"
+                                                    style="width: {{#with (getRatingStats 5 ratingStats)}}{{this.percentage}}{{/with}}%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted" style="min-width: 40px;">
+                                                ({{#with (getRatingStats 5 ratingStats)}}{{this.count}}{{/with}})
+                                            </small>
+                                        </div>
                                     </div>
+                                    {{else}}
+                                    <p class="text-muted text-center">Chưa có đánh giá</p>
+                                    {{/if}}
                                 </div>
 
                                 <!-- Reviews List -->
@@ -212,13 +261,7 @@
                                         </div>
 
                                         <div class="mb-2">
-                                            {{#each (arrayRange 5)}}
-                                            {{#ifGreater this ../this.rating}}
-                                            <i class="bi bi-star text-warning"></i>
-                                            {{else}}
-                                            <i class="bi bi-star-fill text-warning"></i>
-                                            {{/ifGreater}}
-                                            {{/each}}
+                                            {{{displayStars this.rating}}}
                                         </div>
 
                                         {{#if this.title}}

@@ -136,7 +136,7 @@ app.engine(
       },
 
       // ✅ THÊM 2 HELPER MỚI CHO ORDER STATUS
-      getStatusBadgeClass: function(status) {
+      getStatusBadgeClass: function (status) {
         const statusClasses = {
           'pending': 'bg-secondary',
           'confirmed': 'bg-info',
@@ -148,8 +148,8 @@ app.engine(
         };
         return statusClasses[status] || 'bg-secondary';
       },
-      
-      getStatusText: function(status) {
+
+      getStatusText: function (status) {
         const statusTexts = {
           'pending': 'Chờ xác nhận',
           'confirmed': 'Đã xác nhận',
@@ -163,23 +163,23 @@ app.engine(
       },
 
       // ✅ THÊM HELPER ĐƠN GIẢN CHO STAR DISPLAY
-        displayStars: function(rating) {
-            let stars = '';
-            for (let i = 1; i <= 5; i++) {
-                if (i <= rating) {
-                    stars += '<i class="bi bi-star-fill text-warning me-1"></i>';
-                } else {
-                    stars += '<i class="bi bi-star text-warning me-1"></i>';
-                }
-            }
-            return stars;
-        },
-        
-        // ✅ HELPER CHO RADIO BUTTON STARS
-        starOptions: function(orderItemId) {
-            let options = '';
-            for (let i = 1; i <= 5; i++) {
-                options += `
+      displayStars: function (rating) {
+        let stars = '';
+        for (let i = 1; i <= 5; i++) {
+          if (i <= rating) {
+            stars += '<i class="bi bi-star-fill text-warning me-1"></i>';
+          } else {
+            stars += '<i class="bi bi-star text-warning me-1"></i>';
+          }
+        }
+        return stars;
+      },
+
+      // ✅ HELPER CHO RADIO BUTTON STARS
+      starOptions: function (orderItemId) {
+        let options = '';
+        for (let i = 1; i <= 5; i++) {
+          options += `
                 <div class="form-check form-check-inline star-option">
                     <input class="form-check-input" type="radio" name="rating" 
                            id="rating-${orderItemId}-${i}" value="${i}" required>
@@ -188,10 +188,23 @@ app.engine(
                     </label>
                 </div>
                 `;
-            }
-            return options;
         }
+        return options;
+      },
+
+      formatRating: function (rating) {
+        if (!rating) return '0.0';
+        return parseFloat(rating).toFixed(1);
+      },
+      countByStatus: function (status) {
+        // Tự động lấy orders từ context
+        const orders = this.orders || [];
+        if (!Array.isArray(orders)) return 0;
+        return orders.filter(order => order.order_status === status).length;
+      },
+
     },
+
   })
 );
 app.set("view engine", "handlebars");

@@ -1,3 +1,4 @@
+<!-- views/vwAccount/reviews.handlebars -->
 <div class="container mt-4">
     <div class="row">
         <!-- Sidebar -->
@@ -26,90 +27,149 @@
         <!-- Main Content -->
         <div class="col-md-9">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0"><i class="bi bi-star me-2"></i>Đánh giá của tôi</h4>
+                    <span class="badge bg-primary">{{reviews.length}} đánh giá</span>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     {{#if reviews.length}}
-                    <div class="row">
-                        {{#each reviews}}
-                        <div class="col-12 mb-4">
-                            <div class="card">
+                    <!-- Scrollable reviews container -->
+                    <div class="reviews-container" style="max-height: 600px; overflow-y: auto;">
+                        <div class="p-3">
+                            {{#each reviews}}
+                            <div class="card mb-3 border">
                                 <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-2 text-center">
-                                            <img src="{{this.product_image}}" alt="{{this.product_name}}"
-                                                class="img-fluid rounded mb-2" style="max-height: 100px;">
-                                            <a href="/products/{{this.product_slug}}"
-                                                class="btn btn-sm btn-outline-primary mt-2">
-                                                Xem sản phẩm
-                                            </a>
+                                    <div class="row g-3">
+                                        <!-- Product Image & Info -->
+                                        <div class="col-md-3">
+                                            <div class="text-center">
+                                                <img src="{{this.product_image}}" 
+                                                     alt="{{this.product_name}}"
+                                                     class="img-fluid rounded mb-2" 
+                                                     style="max-height: 120px; object-fit: contain;">
+                                                <a href="/products/{{this.product_id}}"
+                                                   class="btn btn-sm btn-outline-primary w-100">
+                                                    <i class="bi bi-box-arrow-up-right me-1"></i> Xem sản phẩm
+                                                </a>
+                                            </div>
                                         </div>
-                                        <div class="col-md-10">
-                                            <h6 class="fw-bold">{{this.product_name}}</h6>
 
+                                        <!-- Review Content -->
+                                        <div class="col-md-9">
+                                            <!-- Product Name -->
+                                            <h6 class="fw-bold mb-2">
+                                                <a href="/products/{{this.product_slug}}" class="text-decoration-none text-dark">
+                                                    {{this.product_name}}
+                                                </a>
+                                            </h6>
+
+                                            <!-- Rating Stars -->
                                             <div class="mb-2">
-                                                {{{displayStars this.rating}}}
-                                                <span class="ms-2 text-muted">{{this.rating}}/5</span>
+                                                <div class="d-flex align-items-center">
+                                                    {{{displayStars this.rating}}}
+                                                    <span class="ms-2 fw-bold">{{this.rating}}/5</span>
+                                                    <span class="badge bg-light text-dark ms-2">
+                                                        {{formatDate this.created_at}}
+                                                    </span>
+                                                    {{#if this.is_verified_purchase}}
+                                                    <span class="badge bg-success ms-2">
+                                                        <i class="bi bi-patch-check-fill me-1"></i> Đã mua hàng
+                                                    </span>
+                                                    {{/if}}
+                                                </div>
                                             </div>
 
-                                            <!-- Review Content -->
+                                            <!-- Review Comment -->
                                             {{#if this.comment}}
-                                            <div class="mb-2">
-                                                <p class="mb-1">{{this.comment}}</p>
+                                            <div class="mb-3">
+                                                <div class="p-3 bg-light rounded">
+                                                    <p class="mb-0">{{this.comment}}</p>
+                                                </div>
+                                            </div>
+                                            {{else}}
+                                            <div class="mb-3 text-muted">
+                                                <i>Không có nhận xét</i>
                                             </div>
                                             {{/if}}
 
                                             <!-- Review Images -->
                                             {{#if this.image_urls}}
-                                            <div class="mb-2">
-                                                <div class="d-flex gap-2">
+                                            <div class="mb-3">
+                                                <h6 class="small fw-bold mb-2">Hình ảnh đính kèm:</h6>
+                                                <div class="d-flex gap-2 flex-wrap">
                                                     {{#each this.image_urls}}
-                                                    <img src="{{this}}" alt="Review image" class="img-thumbnail"
-                                                        style="width: 80px; height: 80px; object-fit: cover;">
+                                                    <a href="{{this}}" target="_blank" class="d-block">
+                                                        <img src="{{this}}" 
+                                                             alt="Review image" 
+                                                             class="img-thumbnail"
+                                                             style="width: 80px; height: 80px; object-fit: cover; cursor: zoom-in;">
+                                                    </a>
                                                     {{/each}}
                                                 </div>
                                             </div>
                                             {{/if}}
 
-                                            <!-- Review Meta -->
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <small class="text-muted">
-                                                    Đánh giá ngày {{formatDate this.created_at}}
-                                                    {{#if this.is_verified_purchase}}
-                                                    <span class="badge bg-success ms-2">
-                                                        <i class="bi bi-patch-check-fill"></i> Đã mua hàng
+                                            <!-- Review Stats -->
+                                            <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                                                <div>
+                                                    <button class="btn btn-sm btn-outline-primary" disabled>
+                                                        <i class="bi bi-hand-thumbs-up me-1"></i>
+                                                        {{this.helpful_count}} hữu ích
+                                                    </button>
+                                                    {{#if this.status}}
+                                                    <span class="badge ms-2 
+                                                        {{#ifEqual this.status 'approved'}}bg-success
+                                                        {{else ifEqual this.status 'pending'}}bg-warning text-dark
+                                                        {{else}}bg-danger{{/ifEqual}}">
+                                                        {{#ifEqual this.status 'approved'}}Đã duyệt
+                                                        {{else ifEqual this.status 'pending'}}Chờ duyệt
+                                                        {{else}}Từ chối{{/ifEqual}}
                                                     </span>
                                                     {{/if}}
-                                                </small>
-
-                                                <div class="d-flex gap-2">
-                                                    <span class="text-muted">
-                                                        <i class="bi bi-hand-thumbs-up"></i>
-                                                        {{this.helpful_count}} hữu ích
-                                                    </span>
-                                                    <button class="btn btn-sm btn-outline-danger">
-                                                        <i class="bi bi-trash"></i> Xóa
-                                                    </button>
                                                 </div>
+                                                
+                                                <!-- Chỉ hiển thị nút chỉnh sửa nếu review còn pending -->
+                                                {{#ifEqual this.status 'pending'}}
+                                                <button class="btn btn-sm btn-outline-warning">
+                                                    <i class="bi bi-pencil me-1"></i> Chỉnh sửa
+                                                </button>
+                                                {{/ifEqual}}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            {{/each}}
                         </div>
-                        {{/each}}
                     </div>
+
+                    <!-- Pagination (nếu cần) -->
+                    {{#if pagination.showPagination}}
+                    <div class="card-footer border-top">
+                        <nav aria-label="Review pagination">
+                            <ul class="pagination justify-content-center mb-0">
+                                <!-- Thêm pagination tương tự wishlist nếu cần -->
+                            </ul>
+                        </nav>
+                    </div>
+                    {{/if}}
+
                     {{else}}
+                    <!-- Empty State -->
                     <div class="text-center py-5">
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <i class="bi bi-star display-1 text-muted"></i>
                         </div>
-                        <h5 class="text-muted">Chưa có đánh giá nào</h5>
-                        <p class="text-muted">Hãy mua sắm và chia sẻ cảm nhận về sản phẩm bạn đã sử dụng!</p>
-                        <a href="/categories" class="btn btn-primary">
-                            <i class="bi bi-cart-plus"></i> Mua sắm ngay
-                        </a>
+                        <h4 class="text-muted mb-3">Chưa có đánh giá nào</h4>
+                        <p class="text-muted mb-4">Hãy mua sắm và chia sẻ cảm nhận về sản phẩm bạn đã sử dụng!</p>
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="/categories" class="btn btn-primary">
+                                <i class="bi bi-cart-plus me-2"></i> Mua sắm ngay
+                            </a>
+                            <a href="/account/orders" class="btn btn-outline-primary">
+                                <i class="bi bi-bag me-2"></i> Xem đơn hàng
+                            </a>
+                        </div>
                     </div>
                     {{/if}}
                 </div>
@@ -119,12 +179,112 @@
 </div>
 
 <style>
-    .card {
-        border: 1px solid #e9ecef;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    /* Custom scrollbar cho reviews container */
+    .reviews-container::-webkit-scrollbar {
+        width: 8px;
     }
-
+    
+    .reviews-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .reviews-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+    
+    .reviews-container::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+    
+    /* Card styling */
+    .card.border {
+        border-color: #e9ecef !important;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .card.border:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Active menu item */
+    .list-group-item.active {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        font-weight: 500;
+    }
+    
+    /* Review images gallery */
     .img-thumbnail {
-        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        transition: transform 0.2s;
+    }
+    
+    .img-thumbnail:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .reviews-container {
+            max-height: 500px;
+        }
+        
+        .card-body .row {
+            flex-direction: column;
+        }
+        
+        .col-md-3, .col-md-9 {
+            width: 100%;
+        }
     }
 </style>
+
+<script>
+    // Image lightbox (nếu muốn click để xem lớn)
+    document.addEventListener('DOMContentLoaded', function() {
+        const reviewImages = document.querySelectorAll('.img-thumbnail');
+        
+        reviewImages.forEach(img => {
+            img.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Tạo lightbox đơn giản
+                const lightbox = document.createElement('div');
+                lightbox.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                    cursor: pointer;
+                `;
+                
+                const lightboxImg = document.createElement('img');
+                lightboxImg.src = this.src;
+                lightboxImg.style.cssText = `
+                    max-width: 90%;
+                    max-height: 90%;
+                    object-fit: contain;
+                    border-radius: 8px;
+                `;
+                
+                lightbox.appendChild(lightboxImg);
+                document.body.appendChild(lightbox);
+                
+                // Click để đóng lightbox
+                lightbox.addEventListener('click', function() {
+                    document.body.removeChild(lightbox);
+                });
+            });
+        });
+    });
+</script>

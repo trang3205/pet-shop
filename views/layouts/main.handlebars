@@ -107,7 +107,7 @@
                                     {{!-- CUSTOMER MENU --}}
                                     {{#ifEqual user.role 'customer'}}
                                     <li>
-                                        <h6 class="dropdown-header text-primary">🛒 Khu vực khách hàng</h6>
+                                        <h6 class="dropdown-header text-primary">Khu vực khách hàng</h6>
                                     </li>
                                     <li><a class="dropdown-item" href="/account/profile">
                                             <i class="bi bi-person"></i> Tài khoản của tôi
@@ -115,9 +115,7 @@
                                     <li><a class="dropdown-item" href="/account/orders">
                                             <i class="bi bi-bag"></i> Đơn hàng của tôi
                                         </a></li>
-                                    <li><a class="dropdown-item" href="/user/addresses">
-                                            <i class="bi bi-geo-alt"></i> Địa chỉ của tôi
-                                        </a></li>
+                                    
                                     <li><a class="dropdown-item" href="/user/wishlist">
                                             <i class="bi bi-heart"></i> Sản phẩm yêu thích
                                         </a></li>
@@ -130,10 +128,7 @@
                                     {{/ifEqual}}
 
                                     {{!-- MENU CHUNG --}}
-                                    <li><a class="dropdown-item" href="/account/profile">
-                                            <i class="bi bi-gear"></i> Cài đặt tài khoản
-                                        </a></li>
-                                    <li>
+                                   
                                         <form action="/account/logout" method="POST" class="d-inline">
                                             <button type="submit" class="dropdown-item border-0 bg-transparent">
                                                 <i class="bi bi-box-arrow-right"></i> Đăng xuất
