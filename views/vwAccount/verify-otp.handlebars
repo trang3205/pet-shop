@@ -1,0 +1,46 @@
+{{! views/vwAccount/verify-otp.handlebars }}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white text-center">
+                    <h4><i class="bi bi-shield-check"></i> Xác thực OTP</h4>
+                </div>
+                <div class="card-body">
+                    {{#if error}}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i> {{error}}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {{/if}}
+
+                    {{#if req.query.resent}}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle"></i> Đã gửi lại mã OTP!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {{/if}}
+
+                    <p class="text-center">Chúng tôi đã gửi mã OTP 6 số đến: <strong>{{email}}</strong></p>
+                    
+                    <form method="post" action="/account/verify-otp">
+                        <input type="hidden" name="email" value="{{email}}">
+                        <div class="mb-3">
+                            <label for="otp_code" class="form-label">Mã OTP</label>
+                            <input type="text" class="form-control" id="otp_code" name="otp_code" 
+                                   maxlength="6" required placeholder="Nhập 6 số" pattern="[0-9]{6}">
+                        </div>
+                        <button type="submit" class="btn btn-info w-100">Xác thực</button>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <form method="post" action="/account/resend-otp" class="d-inline">
+                            <input type="hidden" name="email" value="{{email}}">
+                            <button type="submit" class="btn btn-outline-secondary">Gửi lại OTP</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,520 @@
+<!-- views/vwProduct/detail.handlebars -->
+<div class="container mt-4">
+    <div class="row">
+        <!-- Product Images -->
+        <div class="col-md-6">
+            <div class="card">
+                <img src="{{product.main_image_url}}" class="card-img-top" alt="{{product.name}}"
+                    style="height: 400px; object-fit: cover;">
+
+                {{#if product.discount_price}}
+                <span class="badge bg-danger position-absolute top-0 start-0 m-3 fs-6">Giảm giá</span>
+                {{/if}}
+                {{#if product.is_featured}}
+                <span class="badge bg-warning position-absolute top-0 end-0 m-3 fs-6">Nổi bật</span>
+                {{/if}}
+            </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="h3 fw-bold">{{product.name}}</h1>
+                    <p class="text-muted">{{product.category_name}}</p>
+
+                    <div class="mb-3">
+                        {{#if product.discount_price}}
+                        <div class="d-flex align-items-center">
+                            <h2 class="text-danger me-3">{{formatCurrency product.discount_price}}</h2>
+                            <h4 class="text-muted text-decoration-line-through">{{formatCurrency product.price}}</h4>
+                        </div>
+                        {{else}}
+                        <h2 class="text-primary">{{formatCurrency product.price}}</h2>
+                        {{/if}}
+                    </div>
+
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rating me-3">
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <span class="fw-bold">{{product.average_rating}}</span>
+                            <span class="text-muted">({{product.review_count}} đánh giá)</span>
+                        </div>
+                        <div class="stock">
+                            <span class="badge bg-success">{{product.stock_quantity}} trong kho</span>
+                        </div>
+                    </div>
+
+                    <p class="card-text">{{product.short_description}}</p>
+
+                    <div class="mb-4">
+                        <h5>Mô tả sản phẩm</h5>
+                        <p class="text-muted">{{product.description}}</p>
+                    </div>
+
+                    <!-- Add to Cart -->
+                    <!-- Add to Cart Section - Updated -->
+                    <div class="d-flex gap-2 mb-3">
+                        {{#ifEqual user.role 'customer'}}
+                        <div class="input-group" style="width: 120px;">
+                            <button class="btn btn-outline-secondary" type="button" id="decreaseBtn">-</button>
+                            <input type="number" class="form-control text-center" value="1" min="1"
+                                max="{{product.stock_quantity}}" id="quantityInput">
+                            <button class="btn btn-outline-secondary" type="button" id="increaseBtn">+</button>
+                        </div>
+                        {{/ifEqual}}
+                        <!-- Buy Now Button - Chỉ hiện với Customer -->
+                        {{#ifEqual user.role 'customer'}}
+                        <button class="btn btn-danger flex-grow-1" onclick="buyNow({{product.id}})">
+                            <i class="bi bi-lightning-fill"></i> Mua ngay
+                        </button>
+
+                        <!-- Add to Cart Button - Chỉ hiện với Customer -->
+                        <button class="btn btn-primary flex-grow-1" onclick="addToCartWithQuantity({{product.id}})">
+                            <i class="bi bi-cart-plus"></i> Thêm giỏ hàng
+                        </button>
+                        {{/ifEqual}}
+
+                        <!-- Wishlist Button - Chỉ hiện với Customer -->
+                        {{#ifEqual user.role 'customer'}}
+                        <button class="btn btn-outline-danger" onclick="toggleWishlist({{product.id}})"
+                            id="wishlistBtn">
+                            <i class="bi bi-heart" id="wishlistIcon"></i>
+                        </button>
+                        {{/ifEqual}}
+                    </div>
+
+                    <!-- Features -->
+                    <div class="row text-center g-3">
+                        <div class="col-4">
+                            <i class="bi bi-truck text-primary"></i>
+                            <small class="d-block">Giao hàng miễn phí</small>
+                        </div>
+                        <div class="col-4">
+                            <i class="bi bi-arrow-left-right text-primary"></i>
+                            <small class="d-block">Đổi trả 7 ngày</small>
+                        </div>
+                        <div class="col-4">
+                            <i class="bi bi-shield-check text-primary"></i>
+                            <small class="d-block">Chính hãng</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Details Tabs -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="productTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="description-tab" data-bs-toggle="tab"
+                                data-bs-target="#description" type="button" role="tab">
+                                Mô tả chi tiết
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ingredients-tab" data-bs-toggle="tab"
+                                data-bs-target="#ingredients" type="button" role="tab">
+                                Thành phần
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="usage-tab" data-bs-toggle="tab" data-bs-target="#usage"
+                                type="button" role="tab">
+                                Hướng dẫn sử dụng
+                            </button>
+                        </li>
+                        <!-- 🆕 TAB REVIEWS -->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews"
+                                type="button" role="tab">
+                                Đánh giá ({{ratingStats.total_reviews}})
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content p-3" id="productTabsContent">
+                        <div class="tab-pane fade show active" id="description" role="tabpanel">
+                            <p>{{product.description}}</p>
+                        </div>
+                        <div class="tab-pane fade" id="ingredients" role="tabpanel">
+                            <p>{{product.ingredients}}</p>
+                        </div>
+                        <div class="tab-pane fade" id="usage" role="tabpanel">
+                            <p>{{product.usage_instructions}}</p>
+                        </div>
+
+
+
+                        <!-- 🆕 TAB REVIEWS CONTENT - SIMPLE VERSION -->
+                        <!-- 🆕 TAB REVIEWS CONTENT - FIXED VERSION -->
+                        <div class="tab-pane fade" id="reviews" role="tabpanel">
+                            <div class="row">
+                                <!-- Rating Summary -->
+                                <div class="col-md-4">
+                                    <div class="text-center mb-4">
+                                        <h2 class="text-warning">{{formatRating (default ratingStats.avg_rating 0)}}
+                                        </h2>
+                                        <div class="mb-2">
+                                            {{{displayStars (default ratingStats.avg_rating 0)}}}
+                                        </div>
+                                        <p class="text-muted">Dựa trên {{default ratingStats.total_reviews 0}} đánh giá
+                                        </p>
+                                    </div>
+
+                                    <!-- Rating Breakdown - FIXED -->
+                                    <!-- Rating Breakdown - SIMPLE FIXED VERSION -->
+                                    {{#if ratingStats.total_reviews}}
+                                    <div class="rating-bars">
+                                        <!-- Hiển thị 5 sao -->
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2" style="min-width: 50px;">5 sao</span>
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-warning"
+                                                    style="width: {{#with (getRatingStats 1 ratingStats)}}{{this.percentage}}{{/with}}%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted" style="min-width: 40px;">
+                                                ({{#with (getRatingStats 1 ratingStats)}}{{this.count}}{{/with}})
+                                            </small>
+                                        </div>
+
+                                        <!-- Hiển thị 4 sao -->
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2" style="min-width: 50px;">4 sao</span>
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-warning"
+                                                    style="width: {{#with (getRatingStats 2 ratingStats)}}{{this.percentage}}{{/with}}%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted" style="min-width: 40px;">
+                                                ({{#with (getRatingStats 2 ratingStats)}}{{this.count}}{{/with}})
+                                            </small>
+                                        </div>
+
+                                        <!-- Hiển thị 3 sao -->
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2" style="min-width: 50px;">3 sao</span>
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-warning"
+                                                    style="width: {{#with (getRatingStats 3 ratingStats)}}{{this.percentage}}{{/with}}%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted" style="min-width: 40px;">
+                                                ({{#with (getRatingStats 3 ratingStats)}}{{this.count}}{{/with}})
+                                            </small>
+                                        </div>
+
+                                        <!-- Hiển thị 2 sao -->
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2" style="min-width: 50px;">2 sao</span>
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-warning"
+                                                    style="width: {{#with (getRatingStats 4 ratingStats)}}{{this.percentage}}{{/with}}%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted" style="min-width: 40px;">
+                                                ({{#with (getRatingStats 4 ratingStats)}}{{this.count}}{{/with}})
+                                            </small>
+                                        </div>
+
+                                        <!-- Hiển thị 1 sao -->
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="me-2" style="min-width: 50px;">1 sao</span>
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-warning"
+                                                    style="width: {{#with (getRatingStats 5 ratingStats)}}{{this.percentage}}{{/with}}%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted" style="min-width: 40px;">
+                                                ({{#with (getRatingStats 5 ratingStats)}}{{this.count}}{{/with}})
+                                            </small>
+                                        </div>
+                                    </div>
+                                    {{else}}
+                                    <p class="text-muted text-center">Chưa có đánh giá</p>
+                                    {{/if}}
+                                </div>
+
+                                <!-- Reviews List -->
+                                <div class="col-md-8">
+                                    {{#if reviews.length}}
+                                    {{#each reviews}}
+                                    <div class="review-item border-bottom pb-3 mb-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <img src="{{this.avatar_url}}" class="rounded-circle me-2"
+                                                    alt="{{this.user_name}}" width="32" height="32"
+                                                    onerror="this.src='/static/imgs/users/default-avatar.jpg'">
+                                                <div>
+                                                    <strong>{{this.user_name}}</strong>
+                                                    {{#if this.is_verified_purchase}}
+                                                    <span class="badge bg-success ms-2">Đã mua hàng</span>
+                                                    {{/if}}
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">{{formatDate this.created_at}}</small>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            {{{displayStars this.rating}}}
+                                        </div>
+
+                                        {{#if this.title}}
+                                        <h6 class="fw-bold">{{this.title}}</h6>
+                                        {{/if}}
+
+                                        <p class="mb-2">{{this.comment}}</p>
+
+                                        {{#if this.helpful_count}}
+                                        <div class="text-muted">
+                                            <small>{{this.helpful_count}} người thấy hữu ích</small>
+                                        </div>
+                                        {{/if}}
+                                    </div>
+                                    {{/each}}
+                                    {{else}}
+                                    <div class="text-center py-4">
+                                        <i class="bi bi-chat-quote display-1 text-muted"></i>
+                                        <p class="text-muted mt-3">Chưa có đánh giá nào</p>
+                                        <p class="text-muted">Hãy là người đầu tiên đánh giá sản phẩm này</p>
+                                    </div>
+                                    {{/if}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    {{#if relatedProducts.length}}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="mb-4">Sản phẩm liên quan</h3>
+            <div class="row g-3">
+                {{#each relatedProducts}}
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <div class="card h-100">
+                        <img src="{{this.main_image_url}}" class="card-img-top" alt="{{this.name}}"
+                            style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h6 class="card-title">{{this.name}}</h6>
+                            <p class="card-text text-primary fw-bold">{{formatCurrency this.price}}</p>
+                            <a href="/products/{{this.id}}" class="btn btn-outline-primary btn-sm w-100">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+    {{/if}}
+</div>
+
+<script>
+    // Sửa lại phần quantity selector trong script
+    document.addEventListener('DOMContentLoaded', function () {
+        // Quantity selector functionality - FIXED
+        const quantityInput = document.getElementById('quantityInput');
+        const decreaseBtn = document.getElementById('decreaseBtn');
+        const increaseBtn = document.getElementById('increaseBtn');
+
+        if (decreaseBtn && increaseBtn && quantityInput) {
+            decreaseBtn.addEventListener('click', () => {
+                const currentValue = parseInt(quantityInput.value);
+                if (currentValue > 1) {
+                    quantityInput.value = currentValue - 1;
+                }
+            });
+
+            increaseBtn.addEventListener('click', () => {
+                const currentValue = parseInt(quantityInput.value);
+                const maxStock = parseInt(quantityInput.getAttribute('max')) || 99;
+                if (currentValue < maxStock) {
+                    quantityInput.value = currentValue + 1;
+                }
+            });
+
+            // Validate input manually
+            quantityInput.addEventListener('change', () => {
+                let value = parseInt(quantityInput.value);
+                const min = parseInt(quantityInput.getAttribute('min')) || 1;
+                const max = parseInt(quantityInput.getAttribute('max')) || 99;
+
+                if (isNaN(value) || value < min) {
+                    value = min;
+                } else if (value > max) {
+                    value = max;
+                }
+
+                quantityInput.value = value;
+            });
+        }
+
+        // Check initial wishlist status - FIXED PRODUCT ID
+        checkWishlistStatus({{ product.id }}); // SỬA THÀNH {{product.id}} không có khoảng trắng
+});
+
+
+    // Function để toggle wishlist
+    async function toggleWishlist(productId) {
+        console.log('🔄 TOGGLE WISHLIST CLICKED - Product ID:', productId);
+
+        try {
+            const response = await fetch('/user/wishlist/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: productId
+                })
+            });
+
+            const result = await response.json();
+            console.log('📦 WISHLIST RESPONSE:', result);
+
+            if (result.success) {
+                // Update button appearance
+                const wishlistBtn = document.getElementById('wishlistBtn');
+                const wishlistIcon = document.getElementById('wishlistIcon');
+
+                if (result.isInWishlist) {
+                    // Đã thêm vào wishlist
+                    wishlistBtn.classList.remove('btn-outline-danger');
+                    wishlistBtn.classList.add('btn-danger');
+                    wishlistIcon.classList.remove('bi-heart');
+                    wishlistIcon.classList.add('bi-heart-fill');
+                    showAlert(result.message, 'success');
+                } else {
+                    // Đã xóa khỏi wishlist
+                    wishlistBtn.classList.remove('btn-danger');
+                    wishlistBtn.classList.add('btn-outline-danger');
+                    wishlistIcon.classList.remove('bi-heart-fill');
+                    wishlistIcon.classList.add('bi-heart');
+                    showAlert(result.message, 'info');
+                }
+            } else {
+                showAlert(result.message || 'Có lỗi xảy ra!', 'error');
+            }
+        } catch (error) {
+            console.error('❌ TOGGLE WISHLIST ERROR:', error);
+            showAlert('Có lỗi xảy ra khi cập nhật wishlist!', 'error');
+        }
+    }
+
+    // Check wishlist status khi load trang
+    async function checkWishlistStatus(productId) {
+        try {
+            const response = await fetch(`/user/wishlist/check/${productId}`);
+            const result = await response.json();
+
+            if (result.success && result.isInWishlist) {
+                const wishlistBtn = document.getElementById('wishlistBtn');
+                const wishlistIcon = document.getElementById('wishlistIcon');
+                wishlistBtn.classList.remove('btn-outline-danger');
+                wishlistBtn.classList.add('btn-danger');
+                wishlistIcon.classList.remove('bi-heart');
+                wishlistIcon.classList.add('bi-heart-fill');
+                console.log('✅ WISHLIST STATUS: Already in wishlist');
+            } else {
+                console.log('✅ WISHLIST STATUS: Not in wishlist');
+            }
+        } catch (error) {
+            console.error('Error checking wishlist status:', error);
+        }
+    }
+
+    // Function để thêm vào giỏ hàng với số lượng
+    window.addToCartWithQuantity = async function (productId) {
+        const quantity = parseInt(document.getElementById('quantityInput').value);
+        await addToCart(productId, quantity);
+    };
+
+    // Buy Now function
+    async function buyNow(productId) {
+        const quantity = parseInt(document.getElementById('quantityInput').value);
+
+        try {
+            const response = await fetch('/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    quantity: quantity
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('Đã thêm sản phẩm vào giỏ hàng! Đang chuyển đến giỏ hàng...', 'success');
+                updateCartCount(result.cartItemsCount);
+
+                setTimeout(() => {
+                    window.location.href = '/cart';
+                }, 1000);
+            } else {
+                showAlert(result.message || 'Có lỗi xảy ra!', 'error');
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            showAlert('Có lỗi xảy ra khi thêm vào giỏ hàng!', 'error');
+        }
+    }
+    // Function để thêm sản phẩm vào giỏ hàng
+    async function addToCart(productId, quantity) {
+        try {
+            const response = await fetch('/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    quantity: quantity
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('Đã thêm sản phẩm vào giỏ hàng!', 'success');
+                updateCartCount(result.cartItemsCount);
+            } else {
+                showAlert(result.message || 'Có lỗi xảy ra!', 'error');
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            showAlert('Có lỗi xảy ra khi thêm vào giỏ hàng!', 'error');
+        }
+    }
+
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
+
+    function updateCartCount(count) {
+        const cartBadge = document.querySelector('.cart-badge');
+        if (cartBadge) cartBadge.textContent = count;
+    }
+</script>

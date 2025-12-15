@@ -1,0 +1,483 @@
+{{! 📁 views/vwCheckout/index.handlebars - HOÀN CHỈNH }}
+<div class="container mt-4">
+    <h1 class="mb-4">Thanh toán</h1>
+    <meta name="csrf-token" content="{{csrfToken}}">
+    {{#if selectedProductIds.length}}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i>
+        Bạn đang thanh toán <strong>{{items.length}}</strong> sản phẩm được chọn
+    </div>
+    {{/if}}
+
+    <div class="row">
+        {{! Thông tin giao hàng }}
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Thông tin giao hàng</h5>
+                </div>
+                <div class="card-body">
+                    <form id="checkoutForm">
+                        {{! THÊM HIDDEN FIELD ĐỂ TRUYỀN SELECTED PRODUCTS }}
+                        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                        <input type="hidden" name="selected_products"
+                            value="{{#each selectedProductIds}}{{this}}{{#unless @last}},{{/unless}}{{/each}}">
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Họ và tên *</label>
+                                    <input type="text" class="form-control" name="full_name" value="{{user.name}}"
+                                        required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Số điện thoại *</label>
+                                    <input type="tel" class="form-control" name="phone" value="{{user.phone}}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" value="{{user.email}}">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Tỉnh/Thành phố *</label>
+                                    <input type="text" class="form-control" name="province" placeholder="Ví dụ: TP.HCM"
+                                        required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Quận/Huyện *</label>
+                                    <input type="text" class="form-control" name="district" placeholder="Ví dụ: Quận 1"
+                                        required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Phường/Xã *</label>
+                                    <input type="text" class="form-control" name="ward"
+                                        placeholder="Ví dụ: Phường Bến Nghé" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Địa chỉ cụ thể *</label>
+                            <textarea class="form-control" name="street_address" rows="2"
+                                placeholder="Ví dụ: 123 Đường Lê Lợi" required></textarea>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {{! Danh sách sản phẩm được chọn }}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Sản phẩm thanh toán</h5>
+                    {{#if selectedProductIds.length}}
+                    <small class="text-muted">{{items.length}} sản phẩm được chọn</small>
+                    {{/if}}
+                </div>
+                <div class="card-body">
+                    {{#each items}}
+                    <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                        <img src="{{this.main_image_url}}" alt="{{this.name}}" class="rounded me-3" width="60"
+                            height="60" style="object-fit: cover;"
+                            onerror="this.src='/static/imgs/products/default-product.jpg'">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{this.name}}</h6>
+                            <div class="text-muted small">
+                                {{#if this.discount_price}}
+                                <span class="text-danger">{{formatCurrency this.discount_price}}</span>
+                                <small class="text-decoration-line-through ms-1">
+                                    {{formatCurrency this.price}}
+                                </small>
+                                {{else}}
+                                <span>{{formatCurrency this.price}}</span>
+                                {{/if}}
+                                × {{this.quantity}}
+                            </div>
+                            <small class="text-muted">SKU: {{this.sku}}</small>
+                        </div>
+                        <div class="text-end">
+                            <strong class="text-primary">
+                                {{#if this.discount_price}}
+                                {{formatCurrency (multiply this.discount_price this.quantity)}}
+                                {{else}}
+                                {{formatCurrency (multiply this.price this.quantity)}}
+                                {{/if}}
+                            </strong>
+                        </div>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+
+            {{! Phương thức thanh toán }}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Phương thức thanh toán</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked>
+                        <label class="form-check-label" for="cod">
+                            <i class="bi bi-cash-coin me-2"></i>
+                            Thanh toán khi nhận hàng (COD)
+                        </label>
+                        <div class="form-text text-muted">
+                            Bạn sẽ thanh toán bằng tiền mặt khi nhận được hàng
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="payment_method" value="bank_transfer"
+                            id="bank">
+                        <label class="form-check-label" for="bank">
+                            <i class="bi bi-bank me-2"></i>
+                            Chuyển khoản ngân hàng
+                        </label>
+                        <div class="form-text text-muted">
+                            Chuyển khoản trước qua ngân hàng, hàng sẽ được giao sau khi xác nhận thanh toán
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{! 📄 views/vwCheckout/index.handlebars - THÊM SHIPPING METHOD }}
+            {{! Phương thức vận chuyển - THÊM VÀO SAU PHƯƠNG THỨC THANH TOÁN }}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Phương thức vận chuyển</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="shipping_method" value="Giao hàng tiêu chuẩn"
+                            id="standard" checked>
+                        <label class="form-check-label" for="standard">
+                            <i class="bi bi-truck me-2"></i>
+                            Giao hàng tiêu chuẩn (3-5 ngày) - 30.000₫
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="shipping_method" value="Giao hàng nhanh"
+                            id="express">
+                        <label class="form-check-label" for="express">
+                            <i class="bi bi-lightning me-2"></i>
+                            Giao hàng nhanh (1-2 ngày) - 50.000₫
+                        </label>
+                    </div>
+                </div>
+            </div>
+            {{! Ghi chú }}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Ghi chú đơn hàng (tùy chọn)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <textarea class="form-control" name="notes" rows="3"
+                            placeholder="Ví dụ: Giao hàng giờ hành chính, gọi điện trước khi giao..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{! Tóm tắt đơn hàng }}
+        {{! 📄 views/vwCheckout/index.handlebars - SỬA LỖI HTML }}
+        {{! Tóm tắt đơn hàng - SỬA LẠI STRUCTURE }}
+        <div class="col-md-4">
+            <div class="card sticky-top" style="top: 100px;">
+                <div class="card-header">
+                    <h5 class="mb-0">Tóm tắt đơn hàng</h5>
+                    {{#if selectedProductIds.length}}
+                    <small class="text-muted">{{items.length}} sản phẩm được chọn</small>
+                    {{/if}}
+                </div>
+                <div class="card-body">
+                    {{#each items}}
+                    <div class="d-flex mb-2">
+                        <img src="{{main_image_url}}" alt="{{name}}" class="rounded me-2" width="40" height="40"
+                            style="object-fit: cover;" onerror="this.src='/static/imgs/products/default-product.jpg'">
+                        <div class="flex-grow-1">
+                            <small class="d-block text-truncate" style="max-width: 150px;">{{name}}</small>
+                            <small class="text-muted">
+                                {{formatCurrency (default discount_price price)}} × {{quantity}}
+                            </small>
+                        </div>
+                    </div>
+                    {{/each}}
+
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tạm tính ({{items.length}} sản phẩm):</span>
+                        <span class="subtotal-display">{{formatCurrency subtotal}}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Phí vận chuyển:</span>
+                        <span class="shipping-fee-display">30.000 ₫</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Giảm giá:</span>
+                        <span class="text-success">0 ₫</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong class="h6">Tổng cộng:</strong>
+                        <strong class="h6 text-danger total-amount-display">{{formatCurrency (add subtotal
+                            30000)}}</strong>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="agree_terms" required>
+                        <label class="form-check-label small" for="agree_terms">
+                            Tôi đã đọc và đồng ý với
+                            <a href="#" target="_blank" class="text-decoration-none">điều khoản và điều kiện</a>
+                            của cửa hàng
+                        </label>
+                    </div>
+
+                    <button type="button" class="btn btn-primary btn-lg w-100 mb-2" id="placeOrderBtn">
+                        <i class="bi bi-credit-card me-2"></i>
+                        {{#if selectedProductIds.length}}
+                        Đặt hàng {{items.length}} sản phẩm
+                        {{else}}
+                        Đặt hàng
+                        {{/if}}
+                    </button>
+
+                    <a href="/cart" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        Quay lại giỏ hàng
+                    </a>
+
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">
+                            <i class="bi bi-shield-check me-1"></i>
+                            Thông tin của bạn được bảo mật an toàn
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const placeOrderBtn = document.getElementById('placeOrderBtn');
+            const agreeTermsCheckbox = document.getElementById('agree_terms');
+            const checkoutForm = document.getElementById('checkoutForm');
+
+            // ✅ THÊM: Real-time shipping calculation - THÊM Ở ĐÂY
+            const shippingMethodRadios = document.querySelectorAll('input[name="shipping_method"]');
+            const shippingFeeDisplay = document.querySelector('.shipping-fee-display');
+            const totalAmountDisplay = document.querySelector('.total-amount-display');
+            const subtotalDisplay = document.querySelector('.subtotal-display');
+
+            // Lấy subtotal từ server (đã có trong template)
+            const subtotal = {{subtotal}};
+
+        function updateShippingCalculation() {
+            const selectedShipping = document.querySelector('input[name="shipping_method"]:checked');
+            const shippingFee = selectedShipping.value === 'Giao hàng nhanh' ? 50000 : 30000;
+            const total = subtotal + shippingFee;
+
+            // Update UI
+            shippingFeeDisplay.textContent = new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(shippingFee);
+
+            totalAmountDisplay.textContent = new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(total);
+        }
+
+        // Listen for shipping method changes
+        shippingMethodRadios.forEach(radio => {
+            radio.addEventListener('change', updateShippingCalculation);
+        });
+        // Validate form trước khi submit
+        function validateForm() {
+            const requiredFields = checkoutForm.querySelectorAll('[required]');
+            let isValid = true;
+
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+
+            if (!agreeTermsCheckbox.checked) {
+                isValid = false;
+                agreeTermsCheckbox.classList.add('is-invalid');
+            } else {
+                agreeTermsCheckbox.classList.remove('is-invalid');
+            }
+
+            return isValid;
+        }
+
+        // Thêm real-time validation
+        const requiredFields = checkoutForm.querySelectorAll('[required]');
+        requiredFields.forEach(field => {
+            field.addEventListener('input', function () {
+                if (this.value.trim()) {
+                    this.classList.remove('is-invalid');
+                }
+            });
+        });
+
+        agreeTermsCheckbox.addEventListener('change', function () {
+            if (this.checked) {
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        // Xử lý đặt hàng
+        if (placeOrderBtn) {
+            placeOrderBtn.addEventListener('click', async function () {
+                if (!validateForm()) {
+                    showAlert('Vui lòng điền đầy đủ thông tin bắt buộc và đồng ý với điều khoản', 'warning');
+                    return;
+                }
+
+                const formData = new FormData(checkoutForm);
+                const data = Object.fromEntries(formData);
+
+                // Thêm các field khác
+                data.payment_method = document.querySelector('input[name="payment_method"]:checked').value;
+                data.shipping_method = document.querySelector('input[name="shipping_method"]:checked').value; // ✅ THÊM DÒNG NÀY
+                data.notes = document.querySelector('textarea[name="notes"]').value;
+                data.agree_terms = agreeTermsCheckbox.checked;
+
+                const btn = this;
+                const originalText = btn.innerHTML;
+
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Đang xử lý...';
+
+                try {
+                    const response = await fetch('/checkout/process', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert('Đặt hàng thành công! Đang chuyển hướng...', 'success');
+                        setTimeout(() => {
+                            window.location.href = `/checkout/confirmation/${result.order_id}`;
+                        }, 1500);
+                    } else {
+                        showAlert(result.message || 'Có lỗi xảy ra khi đặt hàng', 'error');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                } catch (error) {
+                    console.error('Checkout error:', error);
+                    showAlert('Có lỗi kết nối. Vui lòng thử lại!', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            });
+        }
+
+        // Hiển thị thông báo
+        function showAlert(message, type) {
+            const alertClass = type === 'error' ? 'alert-danger' :
+                type === 'warning' ? 'alert-warning' : 'alert-success';
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+
+            alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+            document.body.appendChild(alertDiv);
+
+            // Tự động xóa sau 5 giây
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Thêm style cho invalid fields
+        const style = document.createElement('style');
+        style.textContent = `
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+        .is-invalid:focus {
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+        .form-check-input.is-invalid {
+            border-color: #dc3545;
+        }
+    `;
+        document.head.appendChild(style);
+        });
+    </script>
+
+    <style>
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: 1px solid rgba(0, 0, 0, 0.125);
+        }
+
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+        }
+
+        .sticky-top {
+            position: sticky;
+            z-index: 10;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 10px;
+        }
+
+        .text-truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>

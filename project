@@ -1,0 +1,100 @@
+Folder PATH listing for volume New Volume
+Volume serial number is 28C8-B82F
+D:.
+�   .env
+�   .gitignore
+�   app.js
+�   package-lock.json
+�   package.json
+�   project
+�   README.md
+�   SETUP.md
+�   test-db.js
+�   
++---middlewares
+�       auth.js
+�       
++---models
+�       cart.model.js
+�       category.model.js
+�       order.model.js
+�       product.model.js
+�       review.model.js
+�       user.model.js
+�       
++---node_modules
+
++---routes
+�       account.route.js
+�       cart.route.js
+�       category.route.js
+�       checkout.route.js
+�       home.route.js
+�       order.route.js
+�       product.route.js
+�       profile.route.js
+�       review.route.js
+�       user.route.js
+�       wishlist.route.js
+�       
++---static
+�   +---imgs
+�       +---banners
+�       �       slide-1.png
+�       �       slide-2.png
+�       �       slide-3.png
+�       �       
+�       +---categories
+�       �       accessor.jpg
+�       �       cat-food.jpg
+�       �       dog-food.jpg
+�       �       toys.jpg
+�       �       
+�       +---products
+�       �       leather-collar.webp
+�       �       pedigree-adult.webp
+�       �       royal-canin-mini.webp
+�       �       royal-canin-persian.webp
+�       �       rubber-ball.webp
+�       �       whiskas-ocean.jpeg
+�       �       
+�       +---users
+�               default-avatar.jpg
+�               
++---utils
+�       db.js
+�       email.service.js
+�       otp.service.js
+�       
++---views
+    �   404.handlebars
+    �   home.handlebars
+    �   
+    +---layouts
+    �       main.handlebars
+    �       
+    +---vwAccount
+    �       forgot-password.handlebars
+    �       login.handlebars
+    �       order-detail.handlebars
+    �       orders.handlebars
+    �       profile.handlebars
+    �       register.handlebars
+    �       reset-password.handlebars
+    �       reviews.handlebars
+    �       verify-otp.handlebars
+    �       
+    +---vwCart
+    �       index.handlebars
+    �       
+    +---vwCheckout
+    �       confirmation.handlebars
+    �       index.handlebars
+    �       
+    +---vwProduct
+    �       detail.handlebars
+    �       index.handlebars
+    �       
+    +---vwUser
+            wishlist.handlebars
+            
